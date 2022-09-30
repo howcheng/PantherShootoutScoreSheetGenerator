@@ -1,0 +1,6 @@
+[submodule "StandingsGoogleSheetsHelper"]
+	path = StandingsGoogleSheetsHelper
+	url = https://github.com/howcheng/StandingsGoogleSheetsHelper
+[submodule "GoogleOAuthCliClient"]
+	path = GoogleOAuthCliClient
+	url = https://github.com/howcheng/GoogleOAuthCliClient

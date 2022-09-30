@@ -8,4 +8,8 @@
     <RootNamespace>$(SolutionName).$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\StandingsGoogleSheetsHelper\src\StandingsGoogleSheetsHelper.csproj" />
+  </ItemGroup>
+
 </Project>

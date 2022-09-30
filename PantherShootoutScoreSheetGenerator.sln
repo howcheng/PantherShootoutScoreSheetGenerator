@@ -5,13 +5,19 @@ VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "src\ConsoleApp\ConsoleApp.csproj", "{E159665C-9410-463A-8217-ECD38F1CBE56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "src\Services\Services.csproj", "{62141D20-B698-4C35-A44D-894C2973A856}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services", "src\Services\Services.csproj", "{62141D20-B698-4C35-A44D-894C2973A856}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{56D96003-A1DD-4B3F-B8A6-9ABA1242BB06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.Tests", "test\Services.Tests\Services.Tests.csproj", "{755A065B-E95E-4647-B189-7EF1CFD87E18}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Tests", "test\Services.Tests\Services.Tests.csproj", "{755A065B-E95E-4647-B189-7EF1CFD87E18}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "submodules", "submodules", "{244B6CF4-B2B5-43C3-9E61-A770512E54E3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoogleOAuthCliClient", "GoogleOAuthCliClient\src\GoogleOAuthCliClient.csproj", "{BCABF03B-81D3-4AFC-85BF-E4E6411FDB08}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StandingsGoogleSheetsHelper", "StandingsGoogleSheetsHelper\src\StandingsGoogleSheetsHelper.csproj", "{D6915DA1-EA7A-49E1-BDEC-D281003B7967}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoogleSheetsHelper", "StandingsGoogleSheetsHelper\GoogleSheetsHelper\src\GoogleSheetsHelper.csproj", "{4B000CF8-6CD4-4C62-9E91-78DC93106F85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,12 +37,27 @@ Global
 		{755A065B-E95E-4647-B189-7EF1CFD87E18}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{755A065B-E95E-4647-B189-7EF1CFD87E18}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{755A065B-E95E-4647-B189-7EF1CFD87E18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCABF03B-81D3-4AFC-85BF-E4E6411FDB08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCABF03B-81D3-4AFC-85BF-E4E6411FDB08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCABF03B-81D3-4AFC-85BF-E4E6411FDB08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCABF03B-81D3-4AFC-85BF-E4E6411FDB08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6915DA1-EA7A-49E1-BDEC-D281003B7967}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6915DA1-EA7A-49E1-BDEC-D281003B7967}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6915DA1-EA7A-49E1-BDEC-D281003B7967}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6915DA1-EA7A-49E1-BDEC-D281003B7967}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B000CF8-6CD4-4C62-9E91-78DC93106F85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B000CF8-6CD4-4C62-9E91-78DC93106F85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B000CF8-6CD4-4C62-9E91-78DC93106F85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B000CF8-6CD4-4C62-9E91-78DC93106F85}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{755A065B-E95E-4647-B189-7EF1CFD87E18} = {56D96003-A1DD-4B3F-B8A6-9ABA1242BB06}
+		{BCABF03B-81D3-4AFC-85BF-E4E6411FDB08} = {244B6CF4-B2B5-43C3-9E61-A770512E54E3}
+		{D6915DA1-EA7A-49E1-BDEC-D281003B7967} = {244B6CF4-B2B5-43C3-9E61-A770512E54E3}
+		{4B000CF8-6CD4-4C62-9E91-78DC93106F85} = {244B6CF4-B2B5-43C3-9E61-A770512E54E3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C27A83EB-E066-4ADB-9448-511B72AB50A5}
