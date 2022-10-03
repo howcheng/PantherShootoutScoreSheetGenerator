@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -7,6 +7,10 @@
     <AssemblyName>$(SolutionName).$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>$(SolutionName).$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LINQtoCSVCore" Version="1.6.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\StandingsGoogleSheetsHelper\src\StandingsGoogleSheetsHelper.csproj" />
