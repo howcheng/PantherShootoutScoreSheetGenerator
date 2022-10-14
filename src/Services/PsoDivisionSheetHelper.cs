@@ -2,20 +2,22 @@
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
+    /// <summary>
+    /// An extension of <see cref="StandingsSheetHelper"/> specifically for the Panther Shootout tournament.
+    /// </summary>
+    /// <remarks>
+    /// A separate instance must be created for each division because <see cref="_teamsPerPool"/> will vary!
+    /// </remarks>
     public class PsoDivisionSheetHelper : StandingsSheetHelper
     {
         public List<string> WinnerAndPointsColumns { get; }
-        public int TeamsPerPool { get; set; }
+        private readonly int _teamsPerPool;
 
-        public PsoDivisionSheetHelper()
-            : this(DivisionSheetCreator.HeaderRowColumns, DivisionSheetCreator.StandingsHeaderRow, DivisionSheetCreator.WinnerAndPointsColumns)
+        public PsoDivisionSheetHelper(DivisionSheetConfig config)
+            : base(DivisionSheetCreator.HeaderRowColumns, DivisionSheetCreator.StandingsHeaderRow)
         {
-        }
-
-        public PsoDivisionSheetHelper(IEnumerable<string> headerRowColumns, IEnumerable<string> standingsTableColumns, IEnumerable<string> winnersAndPtsColumns)
-            : base(headerRowColumns, standingsTableColumns)
-        {
-            WinnerAndPointsColumns = winnersAndPtsColumns.ToList();
+            WinnerAndPointsColumns = DivisionSheetCreator.WinnerAndPointsColumns.ToList();
+            _teamsPerPool = config.TeamsPerPool;
         }
 
         public override int GetColumnIndexByHeader(string colHeader)
@@ -32,7 +34,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
         protected int CalculateIndexForAdditionalColumns(int idx)
         {
-            return HeaderRowColumns.Count + StandingsTableColumns.Count + TeamsPerPool + idx;
+            return HeaderRowColumns.Count + StandingsTableColumns.Count + _teamsPerPool + idx;
         }
 
         public string HomeTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_HOME_PTS); } }

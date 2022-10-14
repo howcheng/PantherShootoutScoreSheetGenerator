@@ -6,5 +6,6 @@
 		public int GamesPerRound { get; set; }
 		public int NumberOfRounds { get; set; }
 		public int TeamNameCellWidth { get; set; }
+		public int TeamsPerPool { get; set; }
 	}
 }
