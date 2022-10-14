@@ -2,6 +2,6 @@
 {
 	public interface IShootoutSheetService
 	{
-		Task GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams);
+		Task<DivisionSheetConfig> GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams);
 	}
 }

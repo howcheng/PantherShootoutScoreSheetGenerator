@@ -1,9 +1,4 @@
 ﻿using StandingsGoogleSheetsHelper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
@@ -11,6 +6,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
     {
         public List<string> WinnerAndPointsColumns { get; }
         public int TeamsPerPool { get; set; }
+
+        public PsoDivisionSheetHelper()
+            : this(DivisionSheetCreator.HeaderRowColumns, DivisionSheetCreator.StandingsHeaderRow, DivisionSheetCreator.WinnerAndPointsColumns)
+        {
+        }
 
         public PsoDivisionSheetHelper(IEnumerable<string> headerRowColumns, IEnumerable<string> standingsTableColumns, IEnumerable<string> winnersAndPtsColumns)
             : base(headerRowColumns, standingsTableColumns)
@@ -32,7 +32,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
         protected int CalculateIndexForAdditionalColumns(int idx)
         {
-            return HeaderRowColumns.Count + TeamsPerPool + idx;
+            return HeaderRowColumns.Count + StandingsTableColumns.Count + TeamsPerPool + idx;
         }
 
         public string HomeTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_HOME_PTS); } }

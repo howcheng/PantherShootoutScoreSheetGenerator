@@ -4,8 +4,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public static class Colors
 	{
-		// #a4c2f4 -- light blue
-		public static System.Drawing.Color HeaderRowColor = System.Drawing.Color.FromArgb(0xA4, 0xC2, 0xF4);
+		// #6d9eeb -- blue
+		public static System.Drawing.Color HeaderRowColor = System.Drawing.Color.FromArgb(0x6D, 0x9E, 0xEB);
 		// #b6d7a7 -- light green
 		public static System.Drawing.Color SubheaderRowColor = System.Drawing.Color.FromArgb(0xB6, 0xD7, 0xA7);
 
@@ -35,7 +35,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		};
 		public static Color FourthPlaceColor = new Color
 		{
-			// light green: b4a7d6
+			// light purple: b4a7d6
 			Red = (float)0xB4 / 0xFF,
 			Green = (float)0xA7 / 0xFF,
 			Blue = (float)0xD6 / 0xFF,

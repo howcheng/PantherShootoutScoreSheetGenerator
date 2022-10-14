@@ -33,7 +33,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_formulaGenerator = new FormulaGenerator(_helper);
 		}
 
-		public async Task GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams)
+		public async Task<DivisionSheetConfig> GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams)
 		{
 			_logger.LogInformation("Generating Shootout sheet");
 
@@ -66,8 +66,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				divisionRequest.Rows.Add(headerRow);
 
 				// subheader row
-				GoogleSheetRow subheaderRow = new GoogleSheetRow();
-				subheaderRow.AddRange(HeaderRowColumns.Select(x => new GoogleSheetCell(x).SetSubheaderCellFormatting()));
+				GoogleSheetRow subheaderRow = _helper.CreateHeaderRow(HeaderRowColumns, cell => cell.SetSubheaderCellFormatting());
 				divisionRequest.Rows.Add(subheaderRow);
 
 				List<Team> teams = division.Value.ToList();
@@ -92,6 +91,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 			await _sheetsClient.Append(appendRequests);
 			await _sheetsClient.ExecuteRequests(updateSheetRequests);
+
+			// resize the team name column
+			int teamNameColWidth = await _sheetsClient.AutoResizeColumn(ShootoutConstants.SHOOTOUT_SHEET_NAME, 0);
+			return new DivisionSheetConfig
+			{
+				TeamNameCellWidth = teamNameColWidth
+			};
 		}
 
 		internal GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount)

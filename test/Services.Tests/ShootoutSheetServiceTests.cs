@@ -119,8 +119,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				});
 				Assert.All(row, cell =>
 				{
-					Assert.NotNull(cell.BackgroundColor);
-					Assert.True(cell.BackgroundColor!.Value.Equals(Colors.HeaderRowColor));
+					Assert.NotNull(cell.GoogleBackgroundColor);
+					Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.HeaderRowColor));
 				});
 			};
 			Action<GoogleSheetRow> assertSubheaderRow = row =>
@@ -129,8 +129,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				subheaderValues.Should().BeEquivalentTo(ShootoutSheetService.HeaderRowColumns);
 				Assert.All(row, cell =>
 				{
-					Assert.NotNull(cell.BackgroundColor);
-					Assert.True(cell.BackgroundColor!.Value.Equals(Colors.SubheaderRowColor));
+					Assert.NotNull(cell.GoogleBackgroundColor);
+					Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor));
 				});
 			};
 			Action<GoogleSheetRow, int> assertTeamRow = (row, rowNum) =>
