@@ -5,9 +5,9 @@ using StandingsGoogleSheetsHelper;
 namespace PantherShootoutScoreSheetGenerator.Services
 {
 	/// <summary>
-	/// Creates the requests for the standings table; not to be confused with classes that implement  <see cref="StandingsGoogleSheetsHelper.IStandingsRequestCreator"/>
+	/// Creates the requests for the standings table; not to be confused with classes that implement  <see cref="IStandingsRequestCreator"/>
 	/// </summary>
-	public class StandingsTableRequestCreator
+	public class StandingsTableRequestCreator : IStandingsTableRequestCreator
 	{
 		private readonly PsoDivisionSheetHelper _helper;
 		private readonly IStandingsRequestCreatorFactory _requestCreatorFactory;
@@ -17,7 +17,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_helper = helper;
 			_requestCreatorFactory = factory;
 		}
-		
+
 		/// <summary>
 		/// Creates the <see cref="Request"/> and <see cref="UpdateRequest"/> objects to build the standings section of the sheet
 		/// </summary>

@@ -87,6 +87,9 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<PsoDivisionSheetHelper>(helper);
 			services.AddSingleton(new FormulaGenerator(helper));
 			services.AddSingleton(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType, divisionTeams));
+			services.AddSingleton<IScoreSheetHeadersRequestCreator>(provider => ActivatorUtilities.CreateInstance<ScoreSheetHeadersRequestCreator>(provider, divisionName));
+			services.AddSingleton<IScoreInputsRequestCreator>(provider => ActivatorUtilities.CreateInstance<ScoreInputsRequestCreator>(provider, divisionName));
+			services.AddSingleton<IStandingsTableRequestCreator, StandingsTableRequestCreator>();
 
 			Type winnerFormatCreatorType;
 			switch (divisionTeams.Count())

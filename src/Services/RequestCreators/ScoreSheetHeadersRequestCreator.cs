@@ -4,7 +4,7 @@ using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public class ScoreSheetHeadersRequestCreator
+	public class ScoreSheetHeadersRequestCreator : IScoreSheetHeadersRequestCreator
 	{
 		private readonly string _divisionName;
 		private readonly PsoDivisionSheetHelper _helper;
