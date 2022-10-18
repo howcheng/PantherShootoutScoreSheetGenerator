@@ -5,8 +5,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public abstract class StandardChampionshipRequestCreator : ChampionshipRequestCreator
 	{
-		protected StandardChampionshipRequestCreator(DivisionSheetConfig config, string divisionName, PsoDivisionSheetHelper _helper) 
-			: base(config, divisionName, _helper)
+		protected StandardChampionshipRequestCreator(string divisionName, DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+			: base(divisionName, config, helper)
 		{
 		}
 

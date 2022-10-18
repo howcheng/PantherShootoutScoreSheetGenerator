@@ -26,13 +26,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			foreach (IGrouping<string, Team> pool in info.Pools!)
 			{
 				// pool row and header row (standings)
-				info = _headersRequestCreator.CreateHeaderRequests(info, pool.Key, startRowIndex, pool); // after this, startRowIndex is the row with the round number and standings headers
-				startRowIndex += 1;
+				info = _headersRequestCreator.CreateHeaderRequests(info, pool.Key, startRowIndex, pool);
+				startRowIndex += 1; // startRowIndex is now the row with the round number and standings headers
 
 				// standings table
 				info = _standingsTableRequestCreator.CreateStandingsRequests(_config, info, pool, startRowIndex + 1);
 				int standingsStartRowNum = startRowIndex + 2;
-				info.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, standingsStartRowNum + _config.TeamsPerPool - 1)); // -1 because A3:A7 is 4 rows
+				info.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, standingsStartRowNum + _config.TeamsPerPool - 1)); // -1 because A3:A6 is 4 rows
 
 				// scoring rows
 				for (int i = 0; i < _config.NumberOfRounds; i++)

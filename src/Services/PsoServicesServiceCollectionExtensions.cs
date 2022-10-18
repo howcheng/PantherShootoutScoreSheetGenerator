@@ -30,36 +30,25 @@ namespace Microsoft.Extensions.DependencyInjection
 
 			DivisionSheetConfig configClone = new DivisionSheetConfig();
 			configClone.InjectFrom(config);
+			configClone.SetupForTeams(divisionTeams.Count());
 
 			// figure out the correct types to register based on the number of teams
 			Type generatorType, championshipCreatorType;
 			switch (divisionTeams.Count())
 			{
 				case 6:
-					configClone.NumberOfRounds = 3;
-					configClone.GamesPerRound = 1;
-					configClone.TeamsPerPool = 3;
 					generatorType = typeof(SheetGenerator6Teams);
 					championshipCreatorType = typeof(ChampionshipRequestCreator6Teams);
 					break;
 				case 8:
-					configClone.NumberOfRounds = 3;
-					configClone.GamesPerRound = 2;
-					configClone.TeamsPerPool = 4;
 					generatorType = typeof(SheetGenerator8Teams);
 					championshipCreatorType = typeof(ChampionshipRequestCreator8Teams);
 					break;
 				case 10:
-					configClone.NumberOfRounds = 5;
-					configClone.GamesPerRound = 2;
-					configClone.TeamsPerPool = 5;
 					generatorType = typeof(SheetGenerator10Teams);
 					championshipCreatorType = typeof(ChampionshipRequestCreator10Teams);
 					break;
 				default: // 12 teams
-					configClone.NumberOfRounds = 3;
-					configClone.GamesPerRound = 2;
-					configClone.TeamsPerPool = 4;
 					generatorType = typeof(SheetGenerator12Teams);
 					championshipCreatorType = typeof(ChampionshipRequestCreator12Teams);
 					break;

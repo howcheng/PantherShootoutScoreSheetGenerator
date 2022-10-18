@@ -4,14 +4,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public abstract class ChampionshipRequestCreator : IChampionshipRequestCreator
 	{
-		protected readonly DivisionSheetConfig _config;
 		protected readonly string _divisionName;
+		protected readonly DivisionSheetConfig _config;
 		protected readonly PsoDivisionSheetHelper _helper;
 
-		protected ChampionshipRequestCreator(DivisionSheetConfig config, string divisionName, PsoDivisionSheetHelper helper)
+		protected ChampionshipRequestCreator(string divisionName, DivisionSheetConfig config, PsoDivisionSheetHelper helper)
 		{
-			_config = config;
 			_divisionName = divisionName;
+			_config = config;
 			_helper = helper;
 		}
 

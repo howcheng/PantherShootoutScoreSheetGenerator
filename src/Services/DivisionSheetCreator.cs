@@ -80,7 +80,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			}
 
 			// pool play updates
-			PoolPlayInfo poolPlay = new PoolPlayInfo(_divisionTeams.GroupBy(x => x.PoolName).OrderBy(x => x.Key));
+			PoolPlayInfo poolPlay = new PoolPlayInfo(_divisionTeams);
 			poolPlay = await _poolPlayRequestCreator.CreatePoolPlayRequests(poolPlay);
 			await _sheetsClient.Update(poolPlay.UpdateValuesRequests);
 			await _sheetsClient.ExecuteRequests(poolPlay.UpdateSheetRequests);

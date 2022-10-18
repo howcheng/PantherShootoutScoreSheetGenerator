@@ -11,22 +11,26 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 	public class PoolPlayInfo : SheetRequests
 	{
-		/// <summary>
-		/// This constructor is required for AutoFixture because it doesn't know how to autogenerate a IOrderedEnumerable
-		/// </summary>
 		public PoolPlayInfo()
 		{
 		}
 
-		public PoolPlayInfo(IOrderedEnumerable<IGrouping<string, Team>>? pools)
+		public PoolPlayInfo(IEnumerable<Team> teams)
 			: base()
+		{
+			Pools = teams.GroupBy(x => x.PoolName).OrderBy(x => x.Key);
+		}
+
+		protected PoolPlayInfo(IOrderedEnumerable<IGrouping<string, Team>>? pools)
 		{
 			Pools = pools;
 		}
 
-		public IOrderedEnumerable<IGrouping<string, Team>>? Pools { get; set; }
-		public int TeamsPerPool => Pools?.FirstOrDefault()?.Count() ?? 0;
+		public IOrderedEnumerable<IGrouping<string, Team>>? Pools { get; protected set; }
 
+		/// <summary>
+		/// The index of the row where the championship info starts; this should be the row with the label header ("FINALS")
+		/// </summary>
 		public int ChampionshipStartRowIndex { get; set; }
 		/// <summary>
 		/// The start and end row numbers for each of the standings tables (one for each pool, in order)
@@ -40,8 +44,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public int ThirdPlaceGameRowNum { get; set; }
 
 		public ChampionshipInfo(PoolPlayInfo poolPlayInfo)
-			: base(poolPlayInfo.Pools)
+			: base()
 		{
+			Pools = poolPlayInfo.Pools;
 			StandingsStartAndEndRowNums = poolPlayInfo.StandingsStartAndEndRowNums;
 			ChampionshipStartRowIndex = poolPlayInfo.ChampionshipStartRowIndex;
 		}

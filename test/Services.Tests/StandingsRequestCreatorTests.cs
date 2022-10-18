@@ -7,9 +7,9 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 	{
 		// NOTE: All expected formulas were copied directly from the 2021 score sheet
 
-		private Fixture _fixture;
-		private PsoDivisionSheetHelper _helper;
-		private FormulaGenerator _fg;
+		private readonly Fixture _fixture;
+		private readonly PsoDivisionSheetHelper _helper;
+		private readonly FormulaGenerator _fg;
 		private const int TEAMS_PER_POOL = 4;
 		private const int START_ROW_NUM = 3;
 
