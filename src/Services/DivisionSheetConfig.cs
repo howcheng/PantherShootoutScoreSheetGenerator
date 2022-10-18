@@ -10,7 +10,7 @@
 		public int NumberOfRounds { get; set; }
 		public int TeamNameCellWidth { get; set; }
 
-		public void SetupForTeams(int numTeams)
+		protected void SetupForTeams(int numTeams)
 		{
 			NumberOfTeams = numTeams;
 			switch (numTeams)
@@ -35,6 +35,56 @@
 					GamesPerRound = 2;
 					TeamsPerPool = 4;
 					break;
+			}
+		}
+	}
+
+	public class DivisionSheetConfig6Teams : DivisionSheetConfig
+	{
+		public DivisionSheetConfig6Teams()
+		{
+			SetupForTeams(6);
+		}
+	}
+
+	public class DivisionSheetConfig8Teams : DivisionSheetConfig
+	{
+		public DivisionSheetConfig8Teams()
+		{
+			SetupForTeams(8);
+		}
+	}
+
+	public class DivisionSheetConfig10Teams : DivisionSheetConfig
+	{
+		public DivisionSheetConfig10Teams()
+		{
+			SetupForTeams(10);
+		}
+	}
+
+	public class DivisionSheetConfig12Teams : DivisionSheetConfig
+	{
+		public DivisionSheetConfig12Teams()
+		{
+			SetupForTeams(12);
+		}
+	}
+
+	public static class DivisionSheetConfigFactory
+	{
+		public static DivisionSheetConfig GetForTeams(int numTeams)
+		{
+			switch (numTeams)
+			{
+				case 6:
+					return new DivisionSheetConfig6Teams();
+				case 8:
+					return new DivisionSheetConfig8Teams();
+				case 10:
+					return new DivisionSheetConfig10Teams();
+				default:
+					return new DivisionSheetConfig12Teams();
 			}
 		}
 	}

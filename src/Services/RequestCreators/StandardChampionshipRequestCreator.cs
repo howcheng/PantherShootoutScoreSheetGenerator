@@ -10,31 +10,26 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 		}
 
-		protected IList<UpdateRequest> CreateChampionshipHeaderAndTeamRows(PoolPlayInfo poolPlayInfo, int rank, ref int startRowIndex, ref int startRowNum, string label)
+		protected IList<UpdateRequest> CreateChampionshipHeaderAndTeamRows(PoolPlayInfo info, int rank, int startRowIndex, int startRowNum, string label)
 		{
 			List<UpdateRequest> requests = new List<UpdateRequest>
 			{
-				CreateChampionshipHeaderRow(ref startRowIndex, ref startRowNum, label),
-				CreateChampionshipTeamRow(poolPlayInfo, rank, ref startRowIndex, ref startRowNum),
+				CreateChampionshipHeaderRow(startRowIndex, label),
+				CreateChampionshipTeamRow(info, rank, startRowIndex + 1),
 			};
 			return requests;
 		}
 
-		protected UpdateRequest CreateChampionshipHeaderRow(ref int startRowIndex, ref int startRowNum, string label)
+		protected UpdateRequest CreateChampionshipHeaderRow(int startRowIndex, string label)
 		{
-			startRowIndex += 1;
-			startRowNum += 1;
-			string headerCellRange = Utilities.CreateCellRangeString(_helper.HomeTeamColumnName, startRowNum, _helper.AwayTeamColumnName, startRowNum);
 			UpdateRequest request = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_TEAM), label, 0, cell => cell.SetSubheaderCellFormatting());
 			return request;
 		}
 
-		protected UpdateRequest CreateChampionshipTeamRow(PoolPlayInfo poolPlayInfo, int rank, ref int startRowIndex, ref int startRowNum)
+		protected UpdateRequest CreateChampionshipTeamRow(PoolPlayInfo info, int rank, int startRowIndex)
 		{
-			startRowIndex += 1;
-			startRowNum += 1;
-			string homeFomula = GetTeamFormula(rank, poolPlayInfo.StandingsStartAndEndRowNums.First().Item1, poolPlayInfo.StandingsStartAndEndRowNums.First().Item2);
-			string awayFormula = GetTeamFormula(rank, poolPlayInfo.StandingsStartAndEndRowNums.Last().Item1, poolPlayInfo.StandingsStartAndEndRowNums.Last().Item2);
+			string homeFomula = GetTeamFormula(rank, info.StandingsStartAndEndRowNums.First().Item1, info.StandingsStartAndEndRowNums.First().Item2);
+			string awayFormula = GetTeamFormula(rank, info.StandingsStartAndEndRowNums.Last().Item1, info.StandingsStartAndEndRowNums.Last().Item2);
 			return CreateChampionshipGameRequests(startRowIndex, homeFomula, awayFormula);
 		}
 

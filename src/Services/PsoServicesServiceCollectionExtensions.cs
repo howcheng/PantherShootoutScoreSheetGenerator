@@ -28,20 +28,17 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, HomeGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, AwayGamePointsRequestCreator>();
 
-			DivisionSheetConfig configClone = new DivisionSheetConfig();
-			configClone.InjectFrom(config);
-			configClone.SetupForTeams(divisionTeams.Count());
-
 			// figure out the correct types to register based on the number of teams
 			Type generatorType, championshipCreatorType;
-			switch (divisionTeams.Count())
+			int numTeams = divisionTeams.Count();
+			switch (numTeams)
 			{
 				case 6:
-					generatorType = typeof(SheetGenerator6Teams);
+					generatorType = typeof(DivisionSheetGenerator);
 					championshipCreatorType = typeof(ChampionshipRequestCreator6Teams);
 					break;
 				case 8:
-					generatorType = typeof(SheetGenerator8Teams);
+					generatorType = typeof(DivisionSheetGenerator);
 					championshipCreatorType = typeof(ChampionshipRequestCreator8Teams);
 					break;
 				case 10:
@@ -53,8 +50,10 @@ namespace Microsoft.Extensions.DependencyInjection
 					championshipCreatorType = typeof(ChampionshipRequestCreator12Teams);
 					break;
 			}
-			services.AddSingleton(configClone);
-			services.AddSingleton(provider => (IDivisionSheetCreator)ActivatorUtilities.CreateInstance(provider, generatorType, divisionTeams));
+			DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
+			divisionConfig.InjectFrom(config);
+			services.AddSingleton<DivisionSheetConfig>(divisionConfig);
+			services.AddSingleton(provider => (IDivisionSheetGenerator)ActivatorUtilities.CreateInstance(provider, generatorType, divisionTeams));
 			services.AddSingleton(provider => (IChampionshipRequestCreator)ActivatorUtilities.CreateInstance(provider, championshipCreatorType, divisionTeams));
 
 			// register the correct request creators for the number of teams
@@ -62,14 +61,14 @@ namespace Microsoft.Extensions.DependencyInjection
 
 			PsoDivisionSheetHelper helper;
 			Type poolPlayCreatorType;
-			switch (divisionTeams.Count())
+			switch (numTeams)
 			{
 				case 12:
-					helper = new SheetHelper12Teams(configClone);
+					helper = new SheetHelper12Teams(divisionConfig);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator12Teams);
 					break;
 				default:
-					helper = new PsoDivisionSheetHelper(configClone);
+					helper = new PsoDivisionSheetHelper(divisionConfig);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator);
 					break;
 			}
@@ -81,7 +80,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsTableRequestCreator, StandingsTableRequestCreator>();
 
 			Type winnerFormatCreatorType;
-			switch (divisionTeams.Count())
+			switch (numTeams)
 			{
 				case 10:
 					winnerFormatCreatorType = typeof(WinnerFormattingRequestsCreator10Teams);

@@ -1,11 +1,10 @@
 ﻿using Google.Apis.Sheets.v4.Data;
 using GoogleSheetsHelper;
 using StandingsGoogleSheetsHelper;
-using StandingsConstants = StandingsGoogleSheetsHelper.Constants;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public abstract class DivisionSheetCreator : IDivisionSheetCreator
+	public class DivisionSheetGenerator : IDivisionSheetGenerator
 	{
 		private DivisionSheetConfig _config;
 		private List<Team> _divisionTeams;
@@ -20,7 +19,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		public PsoDivisionSheetHelper Helper { get; private set; }
 
-		protected DivisionSheetCreator(DivisionSheetConfig config, ISheetsClient sheetsClient, FormulaGenerator fg
+		public DivisionSheetGenerator(DivisionSheetConfig config, ISheetsClient sheetsClient, FormulaGenerator fg
 			, IPoolPlayRequestCreator poolPlayCreator, IChampionshipRequestCreator championshipCreator, IWinnerFormattingRequestsCreator winnerFormatCreator
 			, List<Team> divisionTeams)
 		{
@@ -39,36 +38,36 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		#region Constants for sheet
 		public static List<string> HeaderRowColumns = new List<string>
 		{
-			StandingsConstants.HDR_HOME_TEAM,
-			StandingsConstants.HDR_HOME_GOALS,
-			StandingsConstants.HDR_AWAY_GOALS,
-			StandingsConstants.HDR_AWAY_TEAM,
+			Constants.HDR_HOME_TEAM,
+			Constants.HDR_HOME_GOALS,
+			Constants.HDR_AWAY_GOALS,
+			Constants.HDR_AWAY_TEAM,
 		};
 		// PSO winner column is moved off to the side so that it's not visible when the sheet is embedded
 		public static List<string> WinnerAndPointsColumns = new List<string>
 		{
-			StandingsConstants.HDR_WINNING_TEAM,
-			StandingsConstants.HDR_HOME_PTS,
-			StandingsConstants.HDR_AWAY_PTS,
+			Constants.HDR_WINNING_TEAM,
+			Constants.HDR_HOME_PTS,
+			Constants.HDR_AWAY_PTS,
 		};
 		public static List<string> StandingsHeaderRow = new List<string>
 		{
-			StandingsConstants.HDR_TEAM_NAME,
-			StandingsConstants.HDR_GAMES_PLAYED,
-			StandingsConstants.HDR_NUM_WINS,
-			StandingsConstants.HDR_NUM_LOSSES,
-			StandingsConstants.HDR_NUM_DRAWS,
-			StandingsConstants.HDR_YELLOW_CARDS,
-			StandingsConstants.HDR_RED_CARDS,
-			StandingsConstants.HDR_GAME_PTS,
-			StandingsConstants.HDR_RANK,
-			StandingsConstants.HDR_CALC_RANK,
-			StandingsConstants.HDR_TIEBREAKER,
-			StandingsConstants.HDR_GOALS_FOR,
-			StandingsConstants.HDR_GOALS_AGAINST,
-			StandingsConstants.HDR_GOAL_DIFF,
+			Constants.HDR_TEAM_NAME,
+			Constants.HDR_GAMES_PLAYED,
+			Constants.HDR_NUM_WINS,
+			Constants.HDR_NUM_LOSSES,
+			Constants.HDR_NUM_DRAWS,
+			Constants.HDR_YELLOW_CARDS,
+			Constants.HDR_RED_CARDS,
+			Constants.HDR_GAME_PTS,
+			Constants.HDR_RANK,
+			Constants.HDR_CALC_RANK,
+			Constants.HDR_TIEBREAKER,
+			Constants.HDR_GOALS_FOR,
+			Constants.HDR_GOALS_AGAINST,
+			Constants.HDR_GOAL_DIFF,
 		};
-		protected static string END_STANDINGS_COL = StandingsConstants.HDR_GOAL_DIFF;
+		protected static string END_STANDINGS_COL = Constants.HDR_GOAL_DIFF;
 		#endregion
 
 		public async Task CreateSheet()

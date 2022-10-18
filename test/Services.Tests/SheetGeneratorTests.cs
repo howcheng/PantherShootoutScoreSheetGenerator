@@ -1,4 +1,6 @@
-﻿namespace PantherShootoutScoreSheetGenerator.Services.Tests
+﻿using GoogleSheetsHelper;
+
+namespace PantherShootoutScoreSheetGenerator.Services.Tests
 {
 	public abstract class SheetGeneratorTests
 	{
@@ -26,5 +28,29 @@
 			return ret;
 		}
 
+		protected Action<UpdateRequest, PoolPlayInfo, int> AssertChampionshipLabelRequest = (rq, info, rowIdx) =>
+		{
+			// label row
+			Assert.Equal(rowIdx, rq.RowStart);
+			IEnumerable<string> labelRowValues = rq.Rows.Single().Select(x => x.StringValue);
+			Assert.Single(labelRowValues.Where(x => !string.IsNullOrEmpty(x)));
+			Assert.All(rq.Rows.Single(), cell => Assert.True(cell.Bold));
+			Assert.All(rq.Rows.Single(), cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.HeaderRowColor)));
+			Assert.Equal(info.ChampionshipStartRowIndex, rq.RowStart);
+		};
+
+		/// <summary>
+		/// Arguments: <see cref="UpdateRequest"/>, text of the label, row index
+		/// </summary>
+		protected Action<UpdateRequest, string, int> AssertChampionshipSubheader = (rq, label, rowIdx) =>
+		{
+			Assert.Equal(rowIdx, rq.RowStart);
+			GoogleSheetRow row = rq.Rows.Single();
+			GoogleSheetCell? labelCell = row.SingleOrDefault(x => !string.IsNullOrEmpty(x.StringValue));
+			Assert.NotNull(labelCell);
+			Assert.StartsWith(label, labelCell!.StringValue);
+			Assert.True(labelCell.Bold);
+			Assert.All(row, cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor)));
+		};
 	}
 }

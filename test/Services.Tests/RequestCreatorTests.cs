@@ -7,6 +7,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 {
 	public class RequestCreatorTests
 	{
+		// NOTE: Unless otherwise specified, all tests here assume an 8-team division
+
 		private const string POOL_A = "A";
 		private const string POOL_B = "B";
 		private const int SHEET_ID = 12345;
@@ -71,7 +73,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				{
 					// standings headers
 					IEnumerable<string> headerValues = rq.Rows.Single().Select(x => x.StringValue);
-					headerValues.Should().BeEquivalentTo(DivisionSheetCreator.StandingsHeaderRow);
+					headerValues.Should().BeEquivalentTo(DivisionSheetGenerator.StandingsHeaderRow);
 					Assert.All(rq.Rows.Single(), cell => Assert.True(cell.Bold));
 					Assert.Equal(START_ROW_IDX + 1, rq.RowStart);
 					Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME), rq.ColumnStart);
@@ -155,13 +157,13 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			Assert.Equal(2, info.UpdateValuesRequests.Count);
 			GoogleSheetRow roundLabelRow = info.UpdateValuesRequests.First().Rows.Single();
-			Assert.Equal(DivisionSheetCreator.HeaderRowColumns.Count, roundLabelRow.Count);
+			Assert.Equal(DivisionSheetGenerator.HeaderRowColumns.Count, roundLabelRow.Count);
 			Assert.Equal("ROUND 1", roundLabelRow.First().StringValue);
 			Assert.All(roundLabelRow, cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor)));
 
 			Assert.Single(info.UpdateValuesRequests.Last().Rows);
 			IEnumerable<string> headers = info.UpdateValuesRequests.Last().Rows.Single().Select(x => x.StringValue);
-			headers.Should().BeEquivalentTo(DivisionSheetCreator.WinnerAndPointsColumns);
+			headers.Should().BeEquivalentTo(DivisionSheetGenerator.WinnerAndPointsColumns);
 
 			Assert.Equal(5, info.UpdateSheetRequests.Count);
 			// the first two are data validation requests for the home/away team inputs
@@ -254,8 +256,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		{
 			List<Team> teams = CreateTeams();
 			teams.AddRange(CreateTeams(POOL_B));
-			DivisionSheetConfig config = new DivisionSheetConfig();
-			config.SetupForTeams(8);
+			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
 			PoolPlayInfo info = new PoolPlayInfo(teams);
 
 			Mock<IScoreSheetHeadersRequestCreator> mockHeadersCreator = new Mock<IScoreSheetHeadersRequestCreator>();

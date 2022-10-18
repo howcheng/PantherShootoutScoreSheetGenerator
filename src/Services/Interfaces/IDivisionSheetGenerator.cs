@@ -2,7 +2,7 @@
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public interface IDivisionSheetCreator
+	public interface IDivisionSheetGenerator
 	{
 		Task CreateSheet();
 	}
