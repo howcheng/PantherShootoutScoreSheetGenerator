@@ -21,16 +21,26 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			List<Request> requests = new List<Request>();
 
-			// round label
-			UpdateRequest roundHeaderRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex++, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_TEAM), $"ROUND {roundNum}", 0, cell => cell.SetSubheaderCellFormatting());
+			// round label and forfeit header
+			UpdateRequest roundHeaderRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex++, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_TEAM) + 1, $"ROUND {roundNum}", 0, cell => cell.SetSubheaderCellFormatting());
+			roundHeaderRequest.Rows.Single().Last().StringValue = Constants.HDR_FORFEIT;
 			info.UpdateValuesRequests.Add(roundHeaderRequest);
 
-			// scoring rows
+			// scoring rows: home team name, away team name, checkbox for forfeit
 			int startRowNum = startRowIndex + 1;
 			string firstTeamSheetCell = poolTeams.First().TeamSheetCell;
 			string lastTeamSheetCell = poolTeams.Last().TeamSheetCell;
 			requests.Add(RequestCreator.CreateDataValidationRequest(ShootoutConstants.SHOOTOUT_SHEET_NAME, firstTeamSheetCell, lastTeamSheetCell, config.SheetId, startRowIndex + 1, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_TEAM), config.GamesPerRound));
 			requests.Add(RequestCreator.CreateDataValidationRequest(ShootoutConstants.SHOOTOUT_SHEET_NAME, firstTeamSheetCell, lastTeamSheetCell, config.SheetId, startRowIndex + 1, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_TEAM), config.GamesPerRound));
+			IStandingsRequestCreator forfeitRequestCreator = _requestCreatorFactory.GetRequestCreator(Constants.HDR_FORFEIT);
+			Request forfeitRequest = forfeitRequestCreator.CreateRequest(new StandingsRequestCreatorConfig
+			{
+				SheetId = config.SheetId,
+				SheetStartRowIndex = startRowIndex + 1,
+				RowCount = config.GamesPerRound,
+				StartGamesRowNum = startRowNum + 1
+			});
+			requests.Add(forfeitRequest);
 
 			UpdateRequest winnerAndPtsHeadersRequest = new UpdateRequest(_divisionName)
 			{

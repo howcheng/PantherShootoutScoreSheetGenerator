@@ -20,7 +20,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_standingsTableRequestCreator = tableCreator;
 		}
 
-		public virtual Task<PoolPlayInfo> CreatePoolPlayRequests(PoolPlayInfo info)
+		public virtual PoolPlayInfo CreatePoolPlayRequests(PoolPlayInfo info)
 		{
 			int startRowIndex = 0;
 			foreach (IGrouping<string, Team> pool in info.Pools!)
@@ -42,7 +42,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			}
 
 			info.ChampionshipStartRowIndex = startRowIndex;
-			return Task.FromResult(info);
+			return info;
 		}
 	}
 }

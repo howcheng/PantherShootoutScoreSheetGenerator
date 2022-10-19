@@ -13,7 +13,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		private const string POOL_B = "B";
 		private const int SHEET_ID = 12345;
 		private const int GAMES_PER_ROUND = 2;
-		private const int NUM_STANDINGS_FORMULAS = 11;
+		private const int NUM_STANDINGS_FORMULAS = 12;
 		private const int START_ROW_IDX = 2;
 		private const int TEAMS_PER_POOL = 4;
 
@@ -104,7 +104,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
 			info = creator.CreateStandingsRequests(config, info, teams, START_ROW_IDX);
-			Assert.Equal(NUM_STANDINGS_FORMULAS + teams.Count() + 1, info.UpdateSheetRequests.Count); // there are 14 columns total, but we don't have formulas for 3 of them (yellow/red cards, tiebreaker), then there are head-to-head formulas for each team and a resize request at the end
+			Assert.Equal(NUM_STANDINGS_FORMULAS + teams.Count() + 1, info.UpdateSheetRequests.Count); // there are 14 columns total, but we don't have formulas for 2 of them (yellow/red cards), then there are head-to-head formulas for each team and a resize request at the end
 			IEnumerable<Request> standingsFormulaRequests = info.UpdateSheetRequests.Where(x => x.RepeatCell != null && x.RepeatCell.Range.StartColumnIndex <= helper.GetColumnIndexByHeader(Constants.HDR_GOAL_DIFF));
 			Assert.Equal(NUM_STANDINGS_FORMULAS, standingsFormulaRequests.Count());
 
@@ -117,7 +117,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				{
 					case Constants.HDR_YELLOW_CARDS:
 					case Constants.HDR_RED_CARDS:
-					case Constants.HDR_TIEBREAKER:
 						Assert.Null(rq);
 						continue;
 					default:
@@ -157,21 +156,25 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			Assert.Equal(2, info.UpdateValuesRequests.Count);
 			GoogleSheetRow roundLabelRow = info.UpdateValuesRequests.First().Rows.Single();
-			Assert.Equal(DivisionSheetGenerator.HeaderRowColumns.Count, roundLabelRow.Count);
+			Assert.Equal(DivisionSheetGenerator.GameScoreColumns.Count, roundLabelRow.Count);
 			Assert.Equal("ROUND 1", roundLabelRow.First().StringValue);
+			Assert.Equal(Constants.HDR_FORFEIT, roundLabelRow.Last().StringValue);
 			Assert.All(roundLabelRow, cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor)));
 
 			Assert.Single(info.UpdateValuesRequests.Last().Rows);
 			IEnumerable<string> headers = info.UpdateValuesRequests.Last().Rows.Single().Select(x => x.StringValue);
 			headers.Should().BeEquivalentTo(DivisionSheetGenerator.WinnerAndPointsColumns);
 
-			Assert.Equal(5, info.UpdateSheetRequests.Count);
+			Assert.Equal(6, info.UpdateSheetRequests.Count);
 			// the first two are data validation requests for the home/away team inputs
 			IEnumerable<Request> dpRequests = info.UpdateSheetRequests.Take(2);
 			Assert.All(dpRequests, r => Assert.NotNull(r.SetDataValidation));
 			Assert.All(dpRequests, r => Assert.Equal(START_ROW_IDX + 2, r.SetDataValidation.Range.StartRowIndex));
-			// the last three are the winner and home/away game points formulas
+
+			// the last four are the forfeit checkbox, and the winner and home/away game points formulas
 			Assert.All(info.UpdateSheetRequests.Skip(2), r => Assert.NotNull(r.RepeatCell));
+			Request forfeitRequest = info.UpdateSheetRequests.Skip(2).First();
+			Assert.Equal(START_ROW_IDX + 2, forfeitRequest.RepeatCell.Range.StartRowIndex);
 
 			// startRowIndex should be ready for the next round
 			Assert.Equal(START_ROW_IDX + GAMES_PER_ROUND + 2, startRowIndex); // +1 for the round label, +1 for a blank space after
@@ -267,7 +270,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<DivisionSheetConfig>(), It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
 				.Returns(new scoreInputReturns((DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx) => 
 				{
-					idx += cfg.GamesPerRound + 2; // +2 accounts the blank row at the end
+					idx += cfg.GamesPerRound + 2; // +2 accounts for the blank row at the end
 					return ppi;
 				}));
 
@@ -276,7 +279,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				.Returns((DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
 
 			PoolPlayRequestCreator creator = new PoolPlayRequestCreator(config, mockHeadersCreator.Object, mockInputsCreator.Object, mockStandingsCreator.Object);
-			info = creator.CreatePoolPlayRequests(info).Result;
+			info = creator.CreatePoolPlayRequests(info);
 
 			Assert.Equal(26, info.ChampionshipStartRowIndex); // this number comes from the 2021 score sheet for 10U Boys, as that was an 8-team division
 		}

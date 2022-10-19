@@ -42,7 +42,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			foreach (string hdr in _helper.StandingsTableColumns)
 			{
 				IStandingsRequestCreator requestCreator = _requestCreatorFactory.GetRequestCreator(hdr);
-				if (requestCreator == null) // not all columns have formulas (yellow/red cards, tiebreaker)
+				if (requestCreator == null) // not all columns have formulas (yellow/red cards)
 					continue;
 
 				PsoStandingsRequestCreatorConfig creatorConfig = new PsoStandingsRequestCreatorConfig

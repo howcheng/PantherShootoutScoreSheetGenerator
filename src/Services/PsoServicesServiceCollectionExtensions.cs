@@ -27,33 +27,31 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, GameWinnerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, HomeGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, AwayGamePointsRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, TiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, ForfeitRequestCreator>();
 
 			// figure out the correct types to register based on the number of teams
-			Type generatorType, championshipCreatorType;
+			Type championshipCreatorType;
 			int numTeams = divisionTeams.Count();
 			switch (numTeams)
 			{
 				case 6:
-					generatorType = typeof(DivisionSheetGenerator);
 					championshipCreatorType = typeof(ChampionshipRequestCreator6Teams);
 					break;
 				case 8:
-					generatorType = typeof(DivisionSheetGenerator);
 					championshipCreatorType = typeof(ChampionshipRequestCreator8Teams);
 					break;
 				case 10:
-					generatorType = typeof(SheetGenerator10Teams);
 					championshipCreatorType = typeof(ChampionshipRequestCreator10Teams);
 					break;
 				default: // 12 teams
-					generatorType = typeof(SheetGenerator12Teams);
 					championshipCreatorType = typeof(ChampionshipRequestCreator12Teams);
 					break;
 			}
 			DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			divisionConfig.InjectFrom(config);
 			services.AddSingleton<DivisionSheetConfig>(divisionConfig);
-			services.AddSingleton(provider => (IDivisionSheetGenerator)ActivatorUtilities.CreateInstance(provider, generatorType, divisionTeams));
+			services.AddSingleton<IDivisionSheetGenerator>(provider => ActivatorUtilities.CreateInstance<DivisionSheetGenerator>(provider, divisionTeams));
 			services.AddSingleton(provider => (IChampionshipRequestCreator)ActivatorUtilities.CreateInstance(provider, championshipCreatorType, divisionTeams));
 
 			// register the correct request creators for the number of teams
@@ -64,7 +62,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			switch (numTeams)
 			{
 				case 12:
-					helper = new SheetHelper12Teams(divisionConfig);
+					helper = new PsoDivisionSheetHelper12Teams(divisionConfig);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator12Teams);
 					break;
 				default:

@@ -14,7 +14,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
         private readonly int _teamsPerPool;
 
         public PsoDivisionSheetHelper(DivisionSheetConfig config)
-            : base(DivisionSheetGenerator.HeaderRowColumns, DivisionSheetGenerator.StandingsHeaderRow)
+            : base(DivisionSheetGenerator.GameScoreColumns, DivisionSheetGenerator.StandingsHeaderRow)
         {
             WinnerAndPointsColumns = DivisionSheetGenerator.WinnerAndPointsColumns.ToList();
             _teamsPerPool = config.TeamsPerPool;

@@ -36,12 +36,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 
 		#region Constants for sheet
-		public static List<string> HeaderRowColumns = new List<string>
+		public static List<string> GameScoreColumns = new List<string>
 		{
 			Constants.HDR_HOME_TEAM,
 			Constants.HDR_HOME_GOALS,
 			Constants.HDR_AWAY_GOALS,
 			Constants.HDR_AWAY_TEAM,
+			Constants.HDR_FORFEIT,
 		};
 		// PSO winner column is moved off to the side so that it's not visible when the sheet is embedded
 		public static List<string> WinnerAndPointsColumns = new List<string>
@@ -80,7 +81,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 			// pool play updates
 			PoolPlayInfo poolPlay = new PoolPlayInfo(_divisionTeams);
-			poolPlay = await _poolPlayRequestCreator.CreatePoolPlayRequests(poolPlay);
+			poolPlay = _poolPlayRequestCreator.CreatePoolPlayRequests(poolPlay);
 			await _sheetsClient.Update(poolPlay.UpdateValuesRequests);
 			await _sheetsClient.ExecuteRequests(poolPlay.UpdateSheetRequests);
 

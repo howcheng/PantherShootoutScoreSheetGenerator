@@ -69,7 +69,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 						{
 							Values = new List<CellData>
 							{
-								new CellData { Note = "This column is in case all of the tiebreakers are equal and it comes down to a coin toss. Enter 1 for the winner." }
+								new CellData { Note = "In case of a tie, please check for the winner of the tiebreaker (it's too difficult to calculate it automatically)" }
 							}
 						}
 					}
