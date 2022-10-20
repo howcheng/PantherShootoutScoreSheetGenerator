@@ -2,48 +2,35 @@
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public abstract class RankWithTiebreakerRequestCreator : StandingsRequestCreator, IStandingsRequestCreator
-	{
-		private readonly string _calculatedRankColumnName;
-		private readonly string _tiebreakerColumnName;
-
-		protected RankWithTiebreakerRequestCreator(FormulaGenerator formGen, string columnHeader, string calcRankCol, string tiebreakerCol) 
-			: base(formGen, columnHeader)
-		{
-			_calculatedRankColumnName = calcRankCol;
-			_tiebreakerColumnName = tiebreakerCol;
-		}
-
-		protected override string GenerateFormula(StandingsRequestCreatorConfig config)
-		{
-			int startRowNum = config.StartGamesRowNum;
-			int endRowNum = config.StartGamesRowNum + config.RowCount - 1;
-			return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula(startRowNum, endRowNum, _calculatedRankColumnName, _tiebreakerColumnName);
-		}
-	}
-
-	public class StandingsRankWithTiebreakerRequestCreator : RankWithTiebreakerRequestCreator
+	public class StandingsRankWithTiebreakerRequestCreator : StandingsRequestCreator
 	{
 		public StandingsRankWithTiebreakerRequestCreator(FormulaGenerator formGen)
-			: base(formGen, Constants.HDR_RANK, ((PsoDivisionSheetHelper)formGen.SheetHelper).CalculatedRankColumnName, ((PsoDivisionSheetHelper)formGen.SheetHelper).TiebreakerColumnName)
+			: base(formGen, Constants.HDR_RANK)
 		{
+		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
+		{
+			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
+			int startRowNum = config.StartGamesRowNum;
+			int endRowNum = config.EndGamesRowNum;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula(startRowNum, endRowNum);
 		}
 	}
 
-	public class PoolWinnersRankWithTiebreakerRequestCreator : RankWithTiebreakerRequestCreator
+	public class PoolWinnersRankWithTiebreakerRequestCreator : StandingsRequestCreator
 	{
 		public PoolWinnersRankWithTiebreakerRequestCreator(FormulaGenerator formGen) 
-			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_RANK
-				, formGen.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_CALC_RANK)
-				, formGen.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_TIEBREAKER))
+			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_RANK)
 		{
 		}
 
-		protected override string GenerateFormula(StandingsRequestCreatorConfig config) // we're just wrapping the regular formula with IFNA( ... , "")
+		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
 		{
-			string formula = base.GenerateFormula(config);
-			formula = $"=IFNA({formula.Substring(1)}, \"\")";
-			return formula;
+			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
+			int startRowNum = config.StartGamesRowNum;
+			int endRowNum = config.EndGamesRowNum;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetPoolWinnersRankWithTiebreakerFormula(startRowNum, endRowNum);
 		}
 	}
 

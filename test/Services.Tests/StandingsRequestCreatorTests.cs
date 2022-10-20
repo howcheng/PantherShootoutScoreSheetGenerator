@@ -5,8 +5,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 {
 	public class StandingsRequestCreatorTests
 	{
-		// NOTE: All expected formulas were copied directly from the 2021 score sheet
-
 		private readonly Fixture _fixture;
 		private readonly PsoDivisionSheetHelper _helper;
 		private readonly PsoFormulaGenerator _fg;
@@ -28,8 +26,14 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.Equal(columnIndex, request.RepeatCell.Range.StartColumnIndex);
 		}
 
+		private void ValidateFormula(Request request, StandingsRequestCreatorConfig config, string formula, int columnIndex)
+		{
+			ValidateRequest(request, config, columnIndex);
+			Assert.NotNull(request.RepeatCell.Cell.UserEnteredValue);
+			Assert.Contains(formula, request.RepeatCell.Cell.UserEnteredValue.FormulaValue); // Contains because some of the formulas may not include the = sign
+		}
+
 		#region Score-based creators (games played, wins, losses, draws, total pts, game pts)
-		// we're not actually validating the formulas themselves as those were done in the StandingsGoogleSheetHelper solution
 		private void ValidateScoreBasedFormula(Request request, PsoStandingsRequestCreatorConfig config, string formulaStartsWith)
 		{
 			// unlike the regular season, we only have 1 standings table, so games played, wins, losses, and draws have to calculate for all rounds at once
@@ -103,10 +107,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			HomeGamePointsRequestCreator creator = new HomeGamePointsRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_PTS));
-
-			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"H\",6,X3=\"D\",3,X3=\"A\",0)+IFS(ISBLANK(B3),0,B3<=3,B3,B3>3,3)+IFS(ISBLANK(C3),0,C3=0,1,C3>0,0)";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = _fg.GetPsoGamePointsFormulaForHomeTeam(config.StartGamesRowNum);
+			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_PTS));
 		}
 
 		[Fact]
@@ -119,10 +121,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			AwayGamePointsRequestCreator creator = new AwayGamePointsRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
-
-			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"A\",6,X3=\"D\",3,X3=\"H\",0)+IFS(ISBLANK(C3),0,C3<=3,C3,C3>3,3)+IFS(ISBLANK(B3),0,B3=0,1,B3>0,0)";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = _fg.GetPsoGamePointsFormulaForAwayTeam(config.StartGamesRowNum);
+			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
 		}
 		#endregion
 
@@ -137,10 +137,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			StandingsRankWithTiebreakerRequestCreator creator = new StandingsRankWithTiebreakerRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_RANK));
-
-			const string expected = "=IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = _fg.GetRankWithTiebreakerFormula(config.StartGamesRowNum, config.EndGamesRowNum);
+			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_RANK));
 		}
 
 		[Fact]
@@ -155,62 +153,51 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			PoolWinnersRankWithTiebreakerRequestCreator creator = new PoolWinnersRankWithTiebreakerRequestCreator(fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK));
-
-			const string expected = "=IFNA(IFS(OR(AB3 >= 3, COUNTIF(AB$3:AB$6, AB3) = 1), AB3, NOT(AF3), AB3+1, AF3, AB3), \"\")";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(config.StartGamesRowNum, config.EndGamesRowNum);
+			ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK));
 		}
 
 		[Fact]
 		public void TestHeadToHeadRequestCreator()
 		{
-			// this formula derived from thw 2021 score sheet for 14U Boys
 			HeadToHeadComparisonRequestCreatorConfig config = _fixture.Build<HeadToHeadComparisonRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.With(x => x.EndGamesRowNum, 14)
-				.With(x => x.FirstTeamsSheetCell, "A13")
-				.With(x => x.OpponentTeamSheetCell, "A$13")
+				.With(x => x.FirstTeamsSheetCell, "Shootout!A13")
+				.With(x => x.OpponentTeamSheetCell, "Shootout!A$14")
 				.With(x => x.RowCount, TEAMS_PER_POOL)
 				.Create();
 			HeadToHeadComparisonRequestCreator creator = new HeadToHeadComparisonRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, config.ColumnIndex);
-
-			const string expected = "=IFNA(IFNA(SWITCH(ArrayFormula(VLOOKUP(Shootout!A13&Shootout!A$13,{A$3:A$14&D$3:D$14, X$3:X$14}, 2, FALSE)), \"H\", \"W\", \"A\", \"L\", \"D\", \"D\"), SWITCH(ArrayFormula(VLOOKUP(Shootout!A$13&Shootout!A13,{A$3:A$14&D$3:D$14, X$3:X$14}, 2, FALSE)), \"H\", \"L\", \"A\", \"W\", \"D\", \"D\")), \"\")";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = _fg.GetHeadToHeadComparisonFormulaForHomeTeam(config.StartGamesRowNum, config.EndGamesRowNum, config.FirstTeamsSheetCell, config.OpponentTeamSheetCell);
+			ValidateFormula(request, config, formula, config.ColumnIndex);
 		}
 
 		[Fact]
 		public void TestHomeGamePointsRequestCreator()
 		{
-			// this formula derived from thw 2021 score sheet for 14U Boys
 			StandingsRequestCreatorConfig config = _fixture.Build<StandingsRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.Create();
 			HomeGamePointsRequestCreator creator = new HomeGamePointsRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_PTS));
-
-			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"H\",6,X3=\"D\",3,X3=\"A\",0)+IFS(ISBLANK(B3),0,B3<=3,B3,B3>3,3)+IFS(ISBLANK(C3),0,C3=0,1,C3>0,0)";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = _fg.GetPsoGamePointsFormulaForHomeTeam(config.StartGamesRowNum);
+			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_PTS));
 		}
 
 		[Fact]
 		public void TestAwayGamePointsRequestCreator()
 		{
-			// this formula copied from thw 2021 score sheet for 14U Boys
 			StandingsRequestCreatorConfig config = _fixture.Build<StandingsRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.Create();
 			AwayGamePointsRequestCreator creator = new AwayGamePointsRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
-
-			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"A\",6,X3=\"D\",3,X3=\"H\",0)+IFS(ISBLANK(C3),0,C3<=3,C3,C3>3,3)+IFS(ISBLANK(B3),0,B3=0,1,B3>0,0)";
-			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			string formula = _fg.GetPsoGamePointsFormulaForAwayTeam(config.StartGamesRowNum);
+			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
 		}
 	}
 }
