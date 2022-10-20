@@ -9,7 +9,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 		private readonly Fixture _fixture;
 		private readonly PsoDivisionSheetHelper _helper;
-		private readonly FormulaGenerator _fg;
+		private readonly PsoFormulaGenerator _fg;
 		private const int TEAMS_PER_POOL = 4;
 		private const int START_ROW_NUM = 3;
 
@@ -17,7 +17,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		{
 			_fixture = new Fixture();
 			_helper = new PsoDivisionSheetHelper(new DivisionSheetConfig { GamesPerRound = 2, NumberOfRounds = 3, TeamsPerPool = TEAMS_PER_POOL});
-			_fg = new FormulaGenerator(_helper);
+			_fg = new PsoFormulaGenerator(_helper);
 		}
 
 		private void ValidateRequest(Request request, StandingsRequestCreatorConfig config, int columnIndex)
@@ -105,7 +105,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_PTS));
 
-			const string expected = "=IFS(OR(ISBLANK(A3),W3=\"\"),0,W3=\"H\",6,W3=\"D\",3,W3=\"A\",0)+IFS(ISBLANK(B3),0,B3<=3,B3,B3>3,3)+IFS(ISBLANK(C3),0,C3=0,1,C3>0,0)";
+			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"H\",6,X3=\"D\",3,X3=\"A\",0)+IFS(ISBLANK(B3),0,B3<=3,B3,B3>3,3)+IFS(ISBLANK(C3),0,C3=0,1,C3>0,0)";
 			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
 		}
 
@@ -121,7 +121,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
 
-			const string expected = "=IFS(OR(ISBLANK(A3),W3=\"\"),0,W3=\"A\",6,W3=\"D\",3,W3=\"H\",0)+IFS(ISBLANK(C3),0,C3<=3,C3,C3>3,3)+IFS(ISBLANK(B3),0,B3=0,1,B3>0,0)";
+			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"A\",6,X3=\"D\",3,X3=\"H\",0)+IFS(ISBLANK(C3),0,C3<=3,C3,C3>3,3)+IFS(ISBLANK(B3),0,B3=0,1,B3>0,0)";
 			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
 		}
 		#endregion
@@ -129,24 +129,42 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		[Fact]
 		public void TestRankWithTiebreakerRequestCreator()
 		{
-			// this formula copied from the 2021 score sheet for 14U Boys
+			// this formula derived from the 2021 score sheet for 14U Boys
 			PsoStandingsRequestCreatorConfig config = _fixture.Build<PsoStandingsRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.With(x => x.RowCount, TEAMS_PER_POOL)
 				.Create();
-			RankWithTiebreakerRequestCreator creator = new RankWithTiebreakerRequestCreator(_fg);
+			StandingsRankWithTiebreakerRequestCreator creator = new StandingsRankWithTiebreakerRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
 			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_RANK));
 
-			const string expected = "=IF(OR(N3 >= 3, COUNTIF(N$3:N$6, N3) = 1), N3, N3 + O3)";
+			const string expected = "=IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)";
+			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+		}
+
+		[Fact]
+		public void TestPoolWinnersRankWithTiebreakerRequestCreator()
+		{
+			// this formula derived from the 2021 score sheet for 14U Boys
+			PsoStandingsRequestCreatorConfig config = _fixture.Build<PsoStandingsRequestCreatorConfig>()
+				.With(x => x.StartGamesRowNum, START_ROW_NUM)
+				.With(x => x.RowCount, TEAMS_PER_POOL)
+				.Create();
+			PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper12Teams(DivisionSheetConfigFactory.GetForTeams(12)));
+			PoolWinnersRankWithTiebreakerRequestCreator creator = new PoolWinnersRankWithTiebreakerRequestCreator(fg);
+			Request request = creator.CreateRequest(config);
+
+			ValidateRequest(request, config, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK));
+
+			const string expected = "=IFNA(IFS(OR(AB3 >= 3, COUNTIF(AB$3:AB$6, AB3) = 1), AB3, NOT(AF3), AB3+1, AF3, AB3), \"\")";
 			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
 		}
 
 		[Fact]
 		public void TestHeadToHeadRequestCreator()
 		{
-			// this formula copied from thw 2021 score sheet for 14U Boys
+			// this formula derived from thw 2021 score sheet for 14U Boys
 			HeadToHeadComparisonRequestCreatorConfig config = _fixture.Build<HeadToHeadComparisonRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.With(x => x.EndGamesRowNum, 14)
@@ -159,14 +177,14 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			ValidateRequest(request, config, config.ColumnIndex);
 
-			const string expected = "=IFNA(IFNA(SWITCH(ArrayFormula(VLOOKUP(Shootout!A13&Shootout!A$13,{A$3:A$14&D$3:D$14, W$3:W$14}, 2, FALSE)), \"H\", \"W\", \"A\", \"L\", \"D\", \"D\"), SWITCH(ArrayFormula(VLOOKUP(Shootout!A$13&Shootout!A13,{A$3:A$14&D$3:D$14, W$3:W$14}, 2, FALSE)), \"H\", \"L\", \"A\", \"W\", \"D\", \"D\")), \"\")";
+			const string expected = "=IFNA(IFNA(SWITCH(ArrayFormula(VLOOKUP(Shootout!A13&Shootout!A$13,{A$3:A$14&D$3:D$14, X$3:X$14}, 2, FALSE)), \"H\", \"W\", \"A\", \"L\", \"D\", \"D\"), SWITCH(ArrayFormula(VLOOKUP(Shootout!A$13&Shootout!A13,{A$3:A$14&D$3:D$14, X$3:X$14}, 2, FALSE)), \"H\", \"L\", \"A\", \"W\", \"D\", \"D\")), \"\")";
 			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
 		}
 
 		[Fact]
 		public void TestHomeGamePointsRequestCreator()
 		{
-			// this formula copied from thw 2021 score sheet for 14U Boys
+			// this formula derived from thw 2021 score sheet for 14U Boys
 			StandingsRequestCreatorConfig config = _fixture.Build<StandingsRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.Create();
@@ -175,7 +193,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_HOME_PTS));
 
-			const string expected = "=IFS(OR(ISBLANK(A3),W3=\"\"),0,W3=\"H\",6,W3=\"D\",3,W3=\"A\",0)+IFS(ISBLANK(B3),0,B3<=3,B3,B3>3,3)+IFS(ISBLANK(C3),0,C3=0,1,C3>0,0)";
+			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"H\",6,X3=\"D\",3,X3=\"A\",0)+IFS(ISBLANK(B3),0,B3<=3,B3,B3>3,3)+IFS(ISBLANK(C3),0,C3=0,1,C3>0,0)";
 			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
 		}
 
@@ -191,7 +209,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			ValidateRequest(request, config, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
 
-			const string expected = "=IFS(OR(ISBLANK(A3),W3=\"\"),0,W3=\"A\",6,W3=\"D\",3,W3=\"H\",0)+IFS(ISBLANK(C3),0,C3<=3,C3,C3>3,3)+IFS(ISBLANK(B3),0,B3=0,1,B3>0,0)";
+			const string expected = "=IFS(OR(ISBLANK(A3),X3=\"\"),0,X3=\"A\",6,X3=\"D\",3,X3=\"H\",0)+IFS(ISBLANK(C3),0,C3<=3,C3,C3>3,3)+IFS(ISBLANK(B3),0,B3=0,1,B3>0,0)";
 			Assert.Equal(expected, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
 		}
 	}

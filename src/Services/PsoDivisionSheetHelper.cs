@@ -10,17 +10,50 @@ namespace PantherShootoutScoreSheetGenerator.Services
     /// </remarks>
     public class PsoDivisionSheetHelper : StandingsSheetHelper
     {
-        public List<string> WinnerAndPointsColumns { get; }
         private readonly int _teamsPerPool;
 
         public PsoDivisionSheetHelper(DivisionSheetConfig config)
-            : base(DivisionSheetGenerator.GameScoreColumns, DivisionSheetGenerator.StandingsHeaderRow)
+            : base(GameScoreColumns, StandingsHeaderRow)
         {
-            WinnerAndPointsColumns = DivisionSheetGenerator.WinnerAndPointsColumns.ToList();
             _teamsPerPool = config.TeamsPerPool;
         }
 
-        public override int GetColumnIndexByHeader(string colHeader)
+		#region Sheet table columns
+		public static List<string> GameScoreColumns = new List<string>
+		{
+			Constants.HDR_HOME_TEAM,
+			Constants.HDR_HOME_GOALS,
+			Constants.HDR_AWAY_GOALS,
+			Constants.HDR_AWAY_TEAM,
+			Constants.HDR_FORFEIT,
+		};
+		// PSO winner column is moved off to the side so that it's not visible when the sheet is embedded
+		public static List<string> WinnerAndPointsColumns = new List<string>
+		{
+			Constants.HDR_WINNING_TEAM,
+			Constants.HDR_HOME_PTS,
+			Constants.HDR_AWAY_PTS,
+		};
+		public static List<string> StandingsHeaderRow = new List<string>
+		{
+			Constants.HDR_TEAM_NAME,
+			Constants.HDR_GAMES_PLAYED,
+			Constants.HDR_NUM_WINS,
+			Constants.HDR_NUM_LOSSES,
+			Constants.HDR_NUM_DRAWS,
+			Constants.HDR_YELLOW_CARDS,
+			Constants.HDR_RED_CARDS,
+			Constants.HDR_GAME_PTS,
+			Constants.HDR_RANK,
+			Constants.HDR_CALC_RANK,
+			Constants.HDR_TIEBREAKER,
+			Constants.HDR_GOALS_FOR,
+			Constants.HDR_GOALS_AGAINST,
+			Constants.HDR_GOAL_DIFF,
+		};
+		#endregion
+
+		public override int GetColumnIndexByHeader(string colHeader)
         {
             int idx = base.GetColumnIndexByHeader(colHeader);
             if (idx > -1)

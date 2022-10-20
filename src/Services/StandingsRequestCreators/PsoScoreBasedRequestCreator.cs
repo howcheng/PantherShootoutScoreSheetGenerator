@@ -18,7 +18,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_formulaGeneratorMethod = formulaGeneratorMethod;
 		}
 
-		public Request CreateRequest(StandingsRequestCreatorConfig cfg)
+		protected override string GenerateFormula(StandingsRequestCreatorConfig config) => throw new NotImplementedException();
+
+		public override Request CreateRequest(StandingsRequestCreatorConfig cfg)
 		{
 			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
 

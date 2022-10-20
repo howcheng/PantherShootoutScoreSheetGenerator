@@ -2,9 +2,9 @@
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public class TiebreakerRequestCreator : CheckboxRequestCreator
+	public class StandingsTiebreakerRequestCreator : CheckboxRequestCreator
 	{
-		public TiebreakerRequestCreator(FormulaGenerator formGen) 
+		public StandingsTiebreakerRequestCreator(FormulaGenerator formGen) 
 			: base(formGen, Constants.HDR_TIEBREAKER)
 		{
 		}
@@ -14,6 +14,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	{
 		public ForfeitRequestCreator(FormulaGenerator formGen) 
 			: base(formGen, Constants.HDR_FORFEIT)
+		{
+		}
+	}
+
+	public class PoolWinnersTiebreakerRequestCreator : CheckboxRequestCreator
+	{
+		public PoolWinnersTiebreakerRequestCreator(FormulaGenerator formGen)
+			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_TIEBREAKER)
 		{
 		}
 	}

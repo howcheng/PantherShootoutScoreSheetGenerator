@@ -1,45 +1,71 @@
-﻿using Google.Apis.Sheets.v4.Data;
-using GoogleSheetsHelper;
-using StandingsGoogleSheetsHelper;
+﻿using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public class RankWithTiebreakerRequestCreator : StandingsRequestCreator, IStandingsRequestCreator
+	public abstract class RankWithTiebreakerRequestCreator : StandingsRequestCreator, IStandingsRequestCreator
 	{
-		public RankWithTiebreakerRequestCreator(FormulaGenerator formGen) 
-			: base(formGen, Constants.HDR_RANK)
+		private readonly string _calculatedRankColumnName;
+		private readonly string _tiebreakerColumnName;
+
+		protected RankWithTiebreakerRequestCreator(FormulaGenerator formGen, string columnHeader, string calcRankCol, string tiebreakerCol) 
+			: base(formGen, columnHeader)
 		{
+			_calculatedRankColumnName = calcRankCol;
+			_tiebreakerColumnName = tiebreakerCol;
 		}
 
-		public Request CreateRequest(StandingsRequestCreatorConfig config)
+		protected override string GenerateFormula(StandingsRequestCreatorConfig config)
 		{
-			PsoDivisionSheetHelper helper = (PsoDivisionSheetHelper)_formulaGenerator.SheetHelper;
-
-			// =IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
-			// if calculated rank >= 3 OR if only one instance of that rank, then do nothing
-			// else if the tiebreaker box is not checked, then rank + 1
-			// else the rank
-
 			int startRowNum = config.StartGamesRowNum;
-			string cellRange = Utilities.CreateCellRangeString(helper.CalculatedRankColumnName, startRowNum, startRowNum + config.RowCount - 1, CellRangeOptions.FixRow);
-			string firstRankCell = $"{helper.CalculatedRankColumnName}{startRowNum}";
-			string firstTiebreakerCell = $"{helper.TiebreakerColumnName}{startRowNum}";
-			string rankWithTbFormula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {1}, NOT({2}), {0}+1, {2}, {0})",
-				firstRankCell,
-				cellRange,
-				firstTiebreakerCell);
-
-			Request request = RequestCreator.CreateRepeatedSheetFormulaRequest(config.SheetId, config.SheetStartRowIndex, _columnIndex, config.RowCount,
-				rankWithTbFormula);
-			return request;
+			int endRowNum = config.StartGamesRowNum + config.RowCount - 1;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula(startRowNum, endRowNum, _calculatedRankColumnName, _tiebreakerColumnName);
 		}
 	}
 
-	public class PsoTeamRankRequestCreator : RankRequestCreator
+	public class StandingsRankWithTiebreakerRequestCreator : RankWithTiebreakerRequestCreator
 	{
-		public PsoTeamRankRequestCreator(FormulaGenerator formGen)
+		public StandingsRankWithTiebreakerRequestCreator(FormulaGenerator formGen)
+			: base(formGen, Constants.HDR_RANK, ((PsoDivisionSheetHelper)formGen.SheetHelper).CalculatedRankColumnName, ((PsoDivisionSheetHelper)formGen.SheetHelper).TiebreakerColumnName)
+		{
+		}
+	}
+
+	public class PoolWinnersRankWithTiebreakerRequestCreator : RankWithTiebreakerRequestCreator
+	{
+		public PoolWinnersRankWithTiebreakerRequestCreator(FormulaGenerator formGen) 
+			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_RANK
+				, formGen.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_CALC_RANK)
+				, formGen.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_TIEBREAKER))
+		{
+		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig config) // we're just wrapping the regular formula with IFNA( ... , "")
+		{
+			string formula = base.GenerateFormula(config);
+			formula = $"=IFNA({formula.Substring(1)}, \"\")";
+			return formula;
+		}
+	}
+
+	public class StandingsCalculatedRankRequestCreator : RankRequestCreator
+	{
+		public StandingsCalculatedRankRequestCreator(FormulaGenerator formGen)
 			: base(formGen, Constants.HDR_CALC_RANK)
 		{
+		}
+	}
+
+	public class PoolWinnersCalculatedRankRequestCreator : StandingsRequestCreator, IStandingsRequestCreator
+	{
+		public PoolWinnersCalculatedRankRequestCreator(FormulaGenerator formGen) 
+			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_CALC_RANK)
+		{
+		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig config) // we're just wrapping the regular formula with IFNA( ... , "")
+		{
+			string columnName = _formulaGenerator.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_PTS);
+			return $"=IFNA({_formulaGenerator.GetTeamRankFormula(columnName, config.StartGamesRowNum, config.StartGamesRowNum, config.RowCount)}, \"\")";
 		}
 	}
 }

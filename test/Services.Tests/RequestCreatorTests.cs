@@ -73,7 +73,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				{
 					// standings headers
 					IEnumerable<string> headerValues = rq.Rows.Single().Select(x => x.StringValue);
-					headerValues.Should().BeEquivalentTo(DivisionSheetGenerator.StandingsHeaderRow);
+					headerValues.Should().BeEquivalentTo(PsoDivisionSheetHelper.StandingsHeaderRow);
 					Assert.All(rq.Rows.Single(), cell => Assert.True(cell.Bold));
 					Assert.Equal(START_ROW_IDX + 1, rq.RowStart);
 					Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME), rq.ColumnStart);
@@ -156,14 +156,14 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			Assert.Equal(2, info.UpdateValuesRequests.Count);
 			GoogleSheetRow roundLabelRow = info.UpdateValuesRequests.First().Rows.Single();
-			Assert.Equal(DivisionSheetGenerator.GameScoreColumns.Count, roundLabelRow.Count);
+			Assert.Equal(PsoDivisionSheetHelper.GameScoreColumns.Count, roundLabelRow.Count);
 			Assert.Equal("ROUND 1", roundLabelRow.First().StringValue);
 			Assert.Equal(Constants.HDR_FORFEIT, roundLabelRow.Last().StringValue);
 			Assert.All(roundLabelRow, cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor)));
 
 			Assert.Single(info.UpdateValuesRequests.Last().Rows);
 			IEnumerable<string> headers = info.UpdateValuesRequests.Last().Rows.Single().Select(x => x.StringValue);
-			headers.Should().BeEquivalentTo(DivisionSheetGenerator.WinnerAndPointsColumns);
+			headers.Should().BeEquivalentTo(PsoDivisionSheetHelper.WinnerAndPointsColumns);
 
 			Assert.Equal(6, info.UpdateSheetRequests.Count);
 			// the first two are data validation requests for the home/away team inputs

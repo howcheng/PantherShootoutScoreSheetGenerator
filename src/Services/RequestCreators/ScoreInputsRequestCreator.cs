@@ -46,9 +46,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			{
 				RowStart = startRowIndex,
 			};
-			winnerAndPtsHeadersRequest.Rows.Add(_helper.CreateHeaderRow(_helper.WinnerAndPointsColumns));
+			winnerAndPtsHeadersRequest.Rows.Add(_helper.CreateHeaderRow(PsoDivisionSheetHelper.WinnerAndPointsColumns));
 
-			foreach (string hdr in _helper.WinnerAndPointsColumns)
+			foreach (string hdr in PsoDivisionSheetHelper.WinnerAndPointsColumns)
 			{
 				IStandingsRequestCreator requestCreator = _requestCreatorFactory.GetRequestCreator(hdr);
 				StandingsRequestCreatorConfig requestConfig = new StandingsRequestCreatorConfig
