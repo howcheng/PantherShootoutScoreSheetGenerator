@@ -65,12 +65,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
             return idx;
         }
 
-        protected int CalculateIndexForAdditionalColumns(int idx)
-        {
-            return HeaderRowColumns.Count + StandingsTableColumns.Count + _teamsPerPool + idx;
-        }
+		protected int CalculateIndexForAdditionalColumns(int idx) 
+			=> HeaderRowColumns.Count + StandingsTableColumns.Count + _teamsPerPool + idx;
 
-        public string HomeTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_HOME_PTS); } }
+		public string HomeTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_HOME_PTS); } }
         public string AwayTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_AWAY_PTS); } }
         public string CalculatedRankColumnName { get { return GetColumnNameByHeader(Constants.HDR_CALC_RANK); } }
         public string TiebreakerColumnName { get { return GetColumnNameByHeader(Constants.HDR_TIEBREAKER); } }
