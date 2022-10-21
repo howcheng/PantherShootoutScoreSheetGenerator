@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using StandingsGoogleSheetsHelper;
+﻿using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
@@ -11,5 +6,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	{
 		public int NumberOfRounds { get; set; }
 		public int GamesPerRound { get; set; }
+	}
+
+	public class OverallRankRequestCreatorConfig : StandingsRequestCreatorConfig
+	{
+		public IEnumerable<Tuple<int, int>> StandingsStartAndEndRowNums { get; set; } = Enumerable.Empty<Tuple<int, int>>();
 	}
 }

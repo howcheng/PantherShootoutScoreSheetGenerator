@@ -199,5 +199,21 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			string formula = _fg.GetPsoGamePointsFormulaForAwayTeam(config.StartGamesRowNum);
 			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
 		}
+
+		[Fact]
+		public void TestOverallRankRequestCreator()
+		{
+			IEnumerable<Tuple<int, int>> startAndEnd = _fixture.CreateMany<Tuple<int, int>>(2);
+			OverallRankRequestCreatorConfig config = _fixture.Build<OverallRankRequestCreatorConfig>()
+				.With(x => x.StartGamesRowNum, START_ROW_NUM)
+				.With(x => x.StandingsStartAndEndRowNums, startAndEnd)
+				.Create();
+			PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper10Teams(DivisionSheetConfigFactory.GetForTeams(10)));
+			OverallRankRequestCreator creator = new OverallRankRequestCreator(fg);
+			Request request = creator.CreateRequest(config);
+
+			string formula = fg.GetOverallRankFormula(START_ROW_NUM, startAndEnd);
+			ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_OVERALL_RANK));
+		}
 	}
 }

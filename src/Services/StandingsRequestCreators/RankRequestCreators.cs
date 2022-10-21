@@ -42,7 +42,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 	}
 
-	public class PoolWinnersCalculatedRankRequestCreator : StandingsRequestCreator, IStandingsRequestCreator
+	public class PoolWinnersCalculatedRankRequestCreator : StandingsRequestCreator
 	{
 		public PoolWinnersCalculatedRankRequestCreator(FormulaGenerator formGen) 
 			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_CALC_RANK)
@@ -53,6 +53,20 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			string columnName = _formulaGenerator.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_PTS);
 			return $"=IFNA({_formulaGenerator.GetTeamRankFormula(columnName, config.StartGamesRowNum, config.StartGamesRowNum, config.RowCount)}, \"\")";
+		}
+	}
+
+	public class OverallRankRequestCreator : StandingsRequestCreator
+	{
+		public OverallRankRequestCreator(FormulaGenerator formGen) 
+			: base(formGen, ShootoutConstants.HDR_OVERALL_RANK)
+		{
+		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
+		{
+			OverallRankRequestCreatorConfig config = (OverallRankRequestCreatorConfig)cfg;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetOverallRankFormula(config.StartGamesRowNum, config.StandingsStartAndEndRowNums);
 		}
 	}
 }

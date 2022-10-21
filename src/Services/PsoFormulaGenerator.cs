@@ -147,9 +147,24 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// otherwise use the calculated rank
 		/// </remarks>
 		public string GetRankWithTiebreakerFormula(int startRowNum, int endRowNum)
+			=> GetRankWithTiebreakerFormula(_helper.CalculatedRankColumnName, startRowNum, endRowNum);
+
+		/// <summary>
+		/// Gets the formula for determining the rank in the standings table, taking into account the tiebreaker checkbox
+		/// </summary>
+		/// <param name="calcRankColumnName">Column name of the calculated rank column (for 10-team divisions, this will be "overall rank")</param>
+		/// <param name="startRowNum"></param>
+		/// <param name="endRowNum"></param>
+		/// <returns></returns>
+		/// <remarks>=IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
+		/// = if (calculated rank >= 3 or no ties), then use the calculated rank
+		/// otherwise if the tiebreaker checkbox is NOT checked, then add 1 to the calculated rank (that way, 1 becomes 2)
+		/// otherwise use the calculated rank
+		/// </remarks>
+		public string GetRankWithTiebreakerFormula(string calcRankColumnName, int startRowNum, int endRowNum)
 		{
-			string cellRange = Utilities.CreateCellRangeString(_helper.CalculatedRankColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			string firstRankCell = $"{_helper.CalculatedRankColumnName}{startRowNum}";
+			string cellRange = Utilities.CreateCellRangeString(calcRankColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
+			string firstRankCell = $"{calcRankColumnName}{startRowNum}";
 			string firstTiebreakerCell = $"{_helper.TiebreakerColumnName}{startRowNum}";
 			string rankWithTbFormula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {0}, NOT({2}), {0}+1, {2}, {0})",
 				firstRankCell,
@@ -239,5 +254,18 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		private string GetGamesPlayedCellForPoolWinnersFormulas(int startRowNum) => $"{_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED)}{startRowNum}";
 		private string GetRankCellRangeForPoolWinnersFormulas(int startRowNum, int endRowNum) => Utilities.CreateCellRangeString(_helper.RankColumnName, startRowNum, endRowNum);
+
+		/// <summary>
+		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
+		/// </summary>
+		/// <returns></returns>
+		/// <remarks>=RANK(L3, {L$3:L$7,L$24:L$28})</remarks>
+		public string GetOverallRankFormula(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
+		{
+			string columnName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK);
+			string cellRanges = standingsStartAndEndRowNums.Select(item => Utilities.CreateCellRangeString(columnName, item.Item1, item.Item2, CellRangeOptions.FixRow))
+				.Aggregate((s1, s2) => $"{s1},{s2}");
+			return $"=RANK({columnName}{rowNum}, {{{cellRanges}}})";
+		}
 	}
 }

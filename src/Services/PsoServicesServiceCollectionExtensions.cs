@@ -21,6 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, TotalPointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, StandingsCalculatedRankRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, OverallRankRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, StandingsTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsScoredRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstRequestCreator>();

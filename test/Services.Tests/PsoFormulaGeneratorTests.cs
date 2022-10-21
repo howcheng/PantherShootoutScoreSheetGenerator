@@ -91,5 +91,20 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(START_ROW, END_POOL_WINNERS_ROW);
 			Assert.Equal(expected, formula);
 		}
+
+		[Fact]
+		public void TestOverallRankFormula()
+		{
+			const string expected = "=RANK(O3, {O$3:O$7,O$24:O$28})";
+
+			PsoFormulaGenerator fg = GetFormulaGenerator(10);
+			List<Tuple<int, int>> startAndEnd = new List<Tuple<int, int>>
+			{
+				new Tuple<int, int>(3, 7),
+				new Tuple<int, int>(24, 28)
+			};
+			string formula = fg.GetOverallRankFormula(START_ROW, startAndEnd);
+			Assert.Equal(expected, formula);
+		}
 	}
 }
