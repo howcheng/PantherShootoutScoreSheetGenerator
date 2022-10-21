@@ -29,7 +29,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
 			int startRowNum = config.StartGamesRowNum;
-			int endRowNum = config.EndGamesRowNum;
+			int endRowNum = config.StartGamesRowNum + config.RowCount - 1; // not using EndGamesRowNum here because the pool winners table isn't the same length as the standings table
 			return ((PsoFormulaGenerator)_formulaGenerator).GetPoolWinnersRankWithTiebreakerFormula(startRowNum, endRowNum);
 		}
 	}

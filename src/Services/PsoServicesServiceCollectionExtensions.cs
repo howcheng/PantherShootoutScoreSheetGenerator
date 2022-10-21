@@ -33,6 +33,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, AwayGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersRankWithTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersCalculatedRankRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, PoolWinnersTiebreakerRequestCreator>();
 
 			// figure out the correct types to register based on the number of teams
 			Type championshipCreatorType;
@@ -65,6 +66,10 @@ namespace Microsoft.Extensions.DependencyInjection
 			Type poolPlayCreatorType;
 			switch (numTeams)
 			{
+				case 10:
+					helper = new PsoDivisionSheetHelper10Teams(divisionConfig);
+					poolPlayCreatorType = typeof(PoolPlayRequestCreator);
+					break;
 				case 12:
 					helper = new PsoDivisionSheetHelper12Teams(divisionConfig);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator12Teams);
