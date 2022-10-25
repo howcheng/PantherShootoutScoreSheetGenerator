@@ -1,5 +1,6 @@
 ﻿using Google.Apis.Sheets.v4.Data;
 using GoogleSheetsHelper;
+using Microsoft.Extensions.Logging;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
@@ -7,7 +8,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	public class DivisionSheetGenerator : IDivisionSheetGenerator
 	{
 		private DivisionSheetConfig _config;
-		private List<Team> _divisionTeams;
+		private IEnumerable<Team> _divisionTeams;
 
 		protected int? SheetId { get; private set; }
 		protected string DivisionName => _divisionTeams.First().DivisionName;
@@ -16,12 +17,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private readonly IPoolPlayRequestCreator _poolPlayRequestCreator;
 		private readonly IChampionshipRequestCreator _championshipRequestCreator;
 		private readonly IWinnerFormattingRequestsCreator _winnerFormattingRequestCreator;
+		private readonly ILogger<DivisionSheetGenerator> _log;
 
 		public PsoDivisionSheetHelper Helper { get; private set; }
 
 		public DivisionSheetGenerator(DivisionSheetConfig config, ISheetsClient sheetsClient, FormulaGenerator fg
 			, IPoolPlayRequestCreator poolPlayCreator, IChampionshipRequestCreator championshipCreator, IWinnerFormattingRequestsCreator winnerFormatCreator
-			, List<Team> divisionTeams)
+			, ILogger<DivisionSheetGenerator> log
+			, IEnumerable<Team> divisionTeams)
 		{
 			_config = config;
 			_sheetsClient = sheetsClient;
@@ -31,6 +34,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_poolPlayRequestCreator = poolPlayCreator;
 			_championshipRequestCreator = championshipCreator;
 			_winnerFormattingRequestCreator = winnerFormatCreator;
+			_log = log;
 
 			_divisionTeams = divisionTeams;
 		}
@@ -39,11 +43,30 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		public async Task CreateSheet()
 		{
+			_log.LogInformation($"Beginning sheet for {DivisionName}...");
 			if (!SheetId.HasValue)
 			{
 				Sheet sheet = await _sheetsClient.GetOrAddSheet(DivisionName);
-				SheetId = sheet.Properties.SheetId;
+				_config.SheetId = SheetId = sheet.Properties.SheetId;
 			}
+
+			// first, expand the sheet because we be wiiiiiide
+			Request resizeSheetRequest = new Request
+			{
+				UpdateSheetProperties = new UpdateSheetPropertiesRequest
+				{
+					Properties = new SheetProperties
+					{
+						GridProperties = new GridProperties
+						{
+							ColumnCount = 35,
+						},
+						SheetId = SheetId,
+					},
+					Fields = $"{nameof(GridProperties).ToCamelCase()}({nameof(GridProperties.ColumnCount).ToCamelCase()})",
+				}
+			};
+			await _sheetsClient.ExecuteRequests(new[] { resizeSheetRequest });
 
 			// pool play updates
 			PoolPlayInfo poolPlay = new PoolPlayInfo(_divisionTeams);
@@ -65,7 +88,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				await _sheetsClient.ExecuteRequests(championship.UpdateSheetRequests);
 
 			// winner conditional formatting
-			SheetRequests winnerRequests = _winnerFormattingRequestCreator.CreateWinnerFormattingRequests(_config, championship);
+			SheetRequests winnerRequests = _winnerFormattingRequestCreator.CreateWinnerFormattingRequests(championship);
 			await _sheetsClient.Update(winnerRequests.UpdateValuesRequests);
 			await _sheetsClient.ExecuteRequests(winnerRequests.UpdateSheetRequests);
 		}

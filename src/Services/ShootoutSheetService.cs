@@ -37,7 +37,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			_logger.LogInformation("Generating Shootout sheet");
 
-			// rename the first sheet from the default "Sheet1"
+			// rename the first sheet from the default "Sheet1" -- do this first
 			Sheet sheet = await _sheetsClient.GetOrAddSheet("Sheet1");
 			sheet.Properties.Title = ShootoutConstants.SHOOTOUT_SHEET_NAME;
 			Request titleRequest = new Request
@@ -48,13 +48,23 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					Fields = "title",
 				},
 			};
-			List<Request> updateSheetRequests = new List<Request> { titleRequest };
+			await _sheetsClient.ExecuteRequests(new[] { titleRequest });
+
+			List<Request> updateSheetRequests = new List<Request>();
 			List<AppendRequest> appendRequests = new List<AppendRequest>(allTeams.Sum(x => x.Value.Count() + 2));
 
 			// create the team rows
 			int rowIndex = 2; // first row that has a formula
 			foreach (KeyValuePair<string, IEnumerable<Team>> division in allTeams)
 			{
+				List<Team> teams = division.Value.ToList();
+
+				// set up conditional formatting requests to show the leader/winner -- do this first because rowIndex will be incrementing
+				Request leaderFormatRequest = CreateShootoutWinnerFormatRequest(teams, sheet.Properties.SheetId, rowIndex, false);
+				updateSheetRequests.Add(leaderFormatRequest);
+				Request winnerFormatRequest = CreateShootoutWinnerFormatRequest(teams, sheet.Properties.SheetId, rowIndex, true);
+				updateSheetRequests.Add(winnerFormatRequest);
+
 				AppendRequest divisionRequest = new AppendRequest(ShootoutConstants.SHOOTOUT_SHEET_NAME);
 
 				// header row
@@ -69,7 +79,6 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				GoogleSheetRow subheaderRow = _helper.CreateHeaderRow(HeaderRowColumns, cell => cell.SetSubheaderCellFormatting());
 				divisionRequest.Rows.Add(subheaderRow);
 
-				List<Team> teams = division.Value.ToList();
 				int firstTeamRowNum = rowIndex + 1;
 				foreach (Team team in teams)
 				{
@@ -78,16 +87,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					rowIndex += 1;
 				}
 
-				// set up conditional formatting requests to show the leader/winner
-				Request leaderFormatRequest = CreateShootoutWinnerFormatRequest(teams, sheet.Properties.SheetId, rowIndex, false);
-				updateSheetRequests.Add(leaderFormatRequest);
-				Request winnerFormatRequest = CreateShootoutWinnerFormatRequest(teams, sheet.Properties.SheetId, rowIndex, true);
-				updateSheetRequests.Add(winnerFormatRequest);
-
 				rowIndex += + 2; // +2 for the next set of headers
 				firstTeamRowNum += teams.Count + 2;
 				appendRequests.Add(divisionRequest);
 			}
+
+			// resize the columns (except team name, which we will do later)
+			IEnumerable<Request> resizeRequests = _helper.CreateCellWidthRequests(sheet.Properties.SheetId, 0);
+			updateSheetRequests.AddRange(resizeRequests.Skip(1));
 
 			await _sheetsClient.Append(appendRequests);
 			await _sheetsClient.ExecuteRequests(updateSheetRequests);
@@ -103,12 +110,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		internal GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount)
 		{
 			int rowNum = rowIndex + 1;
+			team.TeamSheetCell = $"A{rowNum}";
 			// shootout total: =SUM(B3:D3)
 			string shootoutSumRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(HDR_ROUND1), rowNum, _helper.GetColumnNameByHeader(HDR_ROUND3), rowNum, CellRangeOptions.None);
 			string sumFormula = $"=SUM({shootoutSumRange})";
 
 			// rank: =RANK(E3,E$3:E$10)
-			string rankFormula = _formulaGenerator.GetTeamRankFormula(rowNum, firstTeamRowNum, firstTeamRowNum + teamsCount - 1);
+			string rankFormula = $"={_formulaGenerator.GetTeamRankFormula(rowNum, firstTeamRowNum, firstTeamRowNum + teamsCount - 1)}";
 
 			GoogleSheetRow teamRow = new GoogleSheetRow
 			{

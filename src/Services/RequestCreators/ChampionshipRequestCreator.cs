@@ -8,9 +8,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected readonly DivisionSheetConfig _config;
 		protected readonly PsoDivisionSheetHelper _helper;
 
-		protected ChampionshipRequestCreator(string divisionName, DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+		protected ChampionshipRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
 		{
-			_divisionName = divisionName;
+			_divisionName = config.DivisionName;
 			_config = config;
 			_helper = helper;
 		}

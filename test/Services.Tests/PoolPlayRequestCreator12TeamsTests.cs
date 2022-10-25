@@ -32,15 +32,15 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				.Returns((PoolPlayInfo ppi, string poolName, int rowIdx, IEnumerable<Team> teams) => ppi);
 
 			Mock<IScoreInputsRequestCreator> mockInputsCreator = new Mock<IScoreInputsRequestCreator>();
-			mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<DivisionSheetConfig>(), It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
-				.Returns(new scoreInputReturns((DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx) =>
+			mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
+				.Returns(new scoreInputReturns((PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx) =>
 				{
-					idx += cfg.GamesPerRound + 2; // +2 accounts for the blank row at the end
+					idx += config.GamesPerRound + 2; // +2 accounts for the blank row at the end
 					return ppi;
 				}));
 
 			Mock<IStandingsTableRequestCreator> mockStandingsCreator = new Mock<IStandingsTableRequestCreator>();
-			mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<DivisionSheetConfig>(), It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
+			mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
 				.Returns((DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
 
 			IStandingsRequestCreatorFactory factory = CreateStandingsRequestCreatorFactory(teams, config);
@@ -112,6 +112,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		// https://stackoverflow.com/questions/1068095/assigning-out-ref-parameters-in-moq
-		delegate PoolPlayInfo scoreInputReturns(DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx);
+		delegate PoolPlayInfo scoreInputReturns(PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx);
 	}
 }

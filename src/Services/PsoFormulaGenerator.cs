@@ -256,6 +256,20 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private string GetRankCellRangeForPoolWinnersFormulas(int startRowNum, int endRowNum) => Utilities.CreateCellRangeString(_helper.RankColumnName, startRowNum, endRowNum);
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		/// <remarks>=IF(COUNTIF(G$3:G6, "0")=4, "", RANK(M3,M$3:M$9))
+		/// = if no games played yet, show blank, otherwise do the normal rank formula
+		/// </remarks>
+		public string GetCalculatedRankFormula(int startRowNum, int endRowNum, int numTeams)
+		{
+			string rankFormula = GetTeamRankFormula(_helper.GamePointsColumnName, startRowNum, startRowNum, endRowNum);
+			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, startRowNum, startRowNum + numTeams - 1, CellRangeOptions.FixRow);
+			return $"=IF(COUNTIF({gamesPlayedCellRange}, \"0\")={numTeams}, \"\", {rankFormula})";
+		}
+
+		/// <summary>
 		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
 		/// </summary>
 		/// <returns></returns>

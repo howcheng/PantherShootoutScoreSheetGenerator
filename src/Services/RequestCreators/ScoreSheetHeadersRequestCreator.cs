@@ -9,9 +9,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private readonly string _divisionName;
 		private readonly PsoDivisionSheetHelper _helper;
 
-		public ScoreSheetHeadersRequestCreator(string divisionName, PsoDivisionSheetHelper helper)
+		public ScoreSheetHeadersRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
 		{
-			_divisionName = divisionName;
+			_divisionName = config.DivisionName;
 			_helper = helper;
 		}
 
@@ -72,7 +72,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 								new CellData { Note = "In case of a tie, please check for the winner of the tiebreaker (it's too difficult to calculate it automatically)" }
 							}
 						}
-					}
+					},
+					Fields = nameof(CellData.Note).ToCamelCase(),
 				}
 			};
 			info.UpdateSheetRequests.Add(noteRequest);

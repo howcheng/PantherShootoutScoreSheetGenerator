@@ -1,6 +1,7 @@
 ﻿using Google.Apis.Sheets.v4.Data;
 using GoogleSheetsHelper;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Serialization;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services.Tests
@@ -24,6 +25,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			GamesPerRound = GAMES_PER_ROUND,
 			TeamsPerPool = TEAMS_PER_POOL,
 			TeamNameCellWidth = 100,
+			DivisionName = ShootoutConstants.DIV_10UB,
 		};
 
 		private static List<Team> CreateTeams(string pool = POOL_A)
@@ -53,7 +55,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			List<Team> teams = CreateTeams();
 			DivisionSheetConfig config = CreateSheetConfig();
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			ScoreSheetHeadersRequestCreator creator = new ScoreSheetHeadersRequestCreator(teams.First().DivisionName, helper);
+			ScoreSheetHeadersRequestCreator creator = new ScoreSheetHeadersRequestCreator(config, helper);
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
 			info = creator.CreateHeaderRequests(info, POOL_A, START_ROW_IDX, teams);
@@ -92,6 +94,17 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.Single(info.UpdateSheetRequests); // for the tiebreaker note
 		}
 
+		private void ValidateGameRanges(Request request)
+		{
+			for (int i = 0; i < GAMES_PER_ROUND; i++)
+			{
+				int startRow = START_ROW_IDX + 1 + (i * GAMES_PER_ROUND) + (i == 0 ? 0 : i * Constants.ROUND_OFFSET_STANDINGS_TABLE);
+				int endRow = startRow + GAMES_PER_ROUND - 1;
+				string cellRange = Utilities.CreateCellRangeString("A", startRow, endRow, CellRangeOptions.FixRow);
+				Assert.Contains(cellRange, request.RepeatCell.Cell.UserEnteredValue.FormulaValue);
+			}
+		}
+
 		[Theory]
 		[InlineData(5)] // 10-team division
 		[InlineData(3)] // every other division
@@ -100,10 +113,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			List<Team> teams = CreateTeams();
 			DivisionSheetConfig config = CreateSheetConfig(numRounds);
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			StandingsTableRequestCreator creator = new StandingsTableRequestCreator(helper, CreateStandingsRequestCreatorFactory(teams, config));
+			StandingsTableRequestCreator creator = new StandingsTableRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams, config));
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
-			info = creator.CreateStandingsRequests(config, info, teams, START_ROW_IDX);
+			info = creator.CreateStandingsRequests(info, teams, START_ROW_IDX);
 			Assert.Equal(NUM_STANDINGS_FORMULAS + teams.Count() + 1, info.UpdateSheetRequests.Count); // there are 14 columns total, but we don't have formulas for 2 of them (yellow/red cards), then there are head-to-head formulas for each team and a resize request at the end
 			IEnumerable<Request> standingsFormulaRequests = info.UpdateSheetRequests.Where(x => x.RepeatCell != null && x.RepeatCell.Range.StartColumnIndex <= helper.GetColumnIndexByHeader(Constants.HDR_GOAL_DIFF));
 			Assert.Equal(NUM_STANDINGS_FORMULAS, standingsFormulaRequests.Count());
@@ -125,9 +138,16 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				}
 			}
 
-			// confirm the columns for the head-to-head tiebreakers
+			// for games played/wins/draws/losses columns, confirm the score input ranges
+			IEnumerable<Request> scoreBasedRequests = info.UpdateSheetRequests.Where(x => x.RepeatCell != null && x.RepeatCell.Range.StartColumnIndex > helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME) && x.RepeatCell.Range.StartColumnIndex < helper.GetColumnIndexByHeader(Constants.HDR_YELLOW_CARDS));
+			Assert.All(scoreBasedRequests, rq => ValidateGameRanges(rq));
+
+			// confirm the columns and game ranges for the head-to-head tiebreakers
 			IEnumerable<Request> headToHeadRequests = info.UpdateSheetRequests.Where(x => x.RepeatCell != null && x.RepeatCell.Range.StartColumnIndex > helper.GetColumnIndexByHeader(Constants.HDR_GOAL_DIFF));
 			Assert.Equal(teams.Count, headToHeadRequests.Count());
+			int lastGameRowNum = numRounds == 3 ? 12 : 20;
+			string expectedCellRange = Utilities.CreateCellRangeString("A", 3, lastGameRowNum, CellRangeOptions.FixRow);
+			Assert.All(headToHeadRequests, rq => Assert.Contains(expectedCellRange, rq.RepeatCell.Cell.UserEnteredValue.FormulaValue));
 
 			// confirm the column indexes for the tiebreaker columns
 			int? maxStandingsColIdx = standingsFormulaRequests.Max(x => x.RepeatCell.Range.StartColumnIndex);
@@ -148,11 +168,11 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			List<Team> teams = CreateTeams();
 			DivisionSheetConfig config = CreateSheetConfig();
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			ScoreInputsRequestCreator creator = new ScoreInputsRequestCreator(teams.First().DivisionName, helper, CreateStandingsRequestCreatorFactory(teams, config));
+			ScoreInputsRequestCreator creator = new ScoreInputsRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams, config));
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
 			int startRowIndex = START_ROW_IDX;
-			info = creator.CreateScoringRequests(config, info, teams, 1, ref startRowIndex);
+			info = creator.CreateScoringRequests(info, teams, 1, ref startRowIndex);
 
 			Assert.Equal(2, info.UpdateValuesRequests.Count);
 			GoogleSheetRow roundLabelRow = info.UpdateValuesRequests.First().Rows.Single();
@@ -162,19 +182,28 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.All(roundLabelRow, cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor)));
 
 			Assert.Single(info.UpdateValuesRequests.Last().Rows);
-			IEnumerable<string> headers = info.UpdateValuesRequests.Last().Rows.Single().Select(x => x.StringValue);
+			UpdateRequest winnersAndPtsHeaderRequest = info.UpdateValuesRequests.Last();
+			IEnumerable<string> headers = winnersAndPtsHeaderRequest.Rows.Single().Select(x => x.StringValue);
 			headers.Should().BeEquivalentTo(PsoDivisionSheetHelper.WinnerAndPointsColumns);
+			Assert.Equal(helper.GetColumnIndexByHeader(PsoDivisionSheetHelper.WinnerAndPointsColumns.First()), winnersAndPtsHeaderRequest.ColumnStart);
 
-			Assert.Equal(6, info.UpdateSheetRequests.Count);
 			// the first two are data validation requests for the home/away team inputs
-			IEnumerable<Request> dpRequests = info.UpdateSheetRequests.Take(2);
-			Assert.All(dpRequests, r => Assert.NotNull(r.SetDataValidation));
-			Assert.All(dpRequests, r => Assert.Equal(START_ROW_IDX + 2, r.SetDataValidation.Range.StartRowIndex));
+			int startGamesRowIdx = START_ROW_IDX + 1;
+			IEnumerable<Request> dvRequests = info.UpdateSheetRequests.Where(r => r.SetDataValidation != null);
+			Assert.Equal(2, dvRequests.Count());
+			Assert.All(dvRequests, r => Assert.Equal(startGamesRowIdx, r.SetDataValidation.Range.StartRowIndex));
+			Assert.All(dvRequests, r => Assert.Equal(startGamesRowIdx + config.GamesPerRound, r.SetDataValidation.Range.EndRowIndex));
 
-			// the last four are the forfeit checkbox, and the winner and home/away game points formulas
-			Assert.All(info.UpdateSheetRequests.Skip(2), r => Assert.NotNull(r.RepeatCell));
-			Request forfeitRequest = info.UpdateSheetRequests.Skip(2).First();
-			Assert.Equal(START_ROW_IDX + 2, forfeitRequest.RepeatCell.Range.StartRowIndex);
+			// the next four are the forfeit checkbox, and the winner and home/away game points formulas
+			IEnumerable<Request> repeatRequests = info.UpdateSheetRequests.Where(r => r.RepeatCell != null);
+			Assert.Equal(4, repeatRequests.Count());
+			Assert.All(repeatRequests, r => Assert.Equal(startGamesRowIdx, r.RepeatCell.Range.StartRowIndex));
+			Assert.All(repeatRequests, r => Assert.Equal(startGamesRowIdx + config.GamesPerRound, r.RepeatCell.Range.EndRowIndex));
+
+			// the rest are the resize requests
+			IEnumerable<Request> resizeRequests = info.UpdateSheetRequests.Where(r => r.UpdateDimensionProperties != null);
+			Assert.Equal(helper.StandingsTableColumns.Count(), resizeRequests.Count());
+			Assert.All(resizeRequests, r => Assert.NotEqual(-1, r.UpdateDimensionProperties.Range.StartIndex));
 
 			// startRowIndex should be ready for the next round
 			Assert.Equal(START_ROW_IDX + GAMES_PER_ROUND + 2, startRowIndex); // +1 for the round label, +1 for a blank space after
@@ -193,7 +222,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			teams.AddRange(CreateTeams(POOL_B));
 			DivisionSheetConfig config = CreateSheetConfig();
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			WinnerFormattingRequestsCreator creator = new WinnerFormattingRequestsCreator(teams.First().DivisionName, helper);
+			WinnerFormattingRequestsCreator creator = new WinnerFormattingRequestsCreator(config, helper);
 
 			Fixture fixture = new Fixture();
 			fixture.Customize<PoolPlayInfo>(c => c.FromFactory(() => new PoolPlayInfo(teams))); // https://stackoverflow.com/questions/26149618/autofixture-customizations-provide-constructor-parameter
@@ -204,7 +233,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				.Create();
 			ChampionshipInfo info = new ChampionshipInfo(poolInfo);
 
-			SheetRequests requests = creator.CreateWinnerFormattingRequests(config, info);
+			SheetRequests requests = creator.CreateWinnerFormattingRequests(info);
 
 			// verify the legend
 			Assert.Single(requests.UpdateValuesRequests);
@@ -267,16 +296,16 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				.Returns((PoolPlayInfo ppi, string poolName, int rowIdx, IEnumerable<Team> teams) => ppi);
 
 			Mock<IScoreInputsRequestCreator> mockInputsCreator = new Mock<IScoreInputsRequestCreator>();
-			mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<DivisionSheetConfig>(), It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
-				.Returns(new scoreInputReturns((DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx) => 
+			mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
+				.Returns(new scoreInputReturns((PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx) => 
 				{
-					idx += cfg.GamesPerRound + 2; // +2 accounts for the blank row at the end
+					idx += config.GamesPerRound + 2; // +2 accounts for the blank row at the end
 					return ppi;
 				}));
 
 			Mock<IStandingsTableRequestCreator> mockStandingsCreator = new Mock<IStandingsTableRequestCreator>();
-			mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<DivisionSheetConfig>(), It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
-				.Returns((DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
+			mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
+				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
 
 			PoolPlayRequestCreator creator = new PoolPlayRequestCreator(config, mockHeadersCreator.Object, mockInputsCreator.Object, mockStandingsCreator.Object);
 			info = creator.CreatePoolPlayRequests(info);
@@ -285,6 +314,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		// https://stackoverflow.com/questions/1068095/assigning-out-ref-parameters-in-moq
-		delegate PoolPlayInfo scoreInputReturns(DivisionSheetConfig cfg, PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx);
+		delegate PoolPlayInfo scoreInputReturns(PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx);
 	}
 }

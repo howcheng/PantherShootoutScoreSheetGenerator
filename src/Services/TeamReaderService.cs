@@ -36,7 +36,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				IEnumerable<Team> teams = context.Read<Team>(reader, inputFileDescription).ToArray(); // if we don't materialize this, the division names disappear when we do the GroupBy
 				IEnumerable<IGrouping<string, Team>> teamsGrouped = teams.GroupBy(x => x.DivisionName);
 
-				_logger.LogInformation($"Found {teams.Count()} across {teamsGrouped.Count()} divisions");
+				_logger.LogInformation($"Found {teams.Count()} teams across {teamsGrouped.Count()} divisions");
 				return new SortedDictionary<string, IEnumerable<Team>>(teamsGrouped.ToDictionary(x => x.Key, x => x.AsEnumerable()));
 			}
 		}

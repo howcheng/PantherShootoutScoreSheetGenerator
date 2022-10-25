@@ -9,11 +9,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	/// </summary>
 	public class StandingsTableRequestCreator : IStandingsTableRequestCreator
 	{
+		private readonly DivisionSheetConfig _config;
 		private readonly PsoDivisionSheetHelper _helper;
 		private readonly IStandingsRequestCreatorFactory _requestCreatorFactory;
 
-		public StandingsTableRequestCreator(PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory)
+		public StandingsTableRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory)
 		{
+			_config = config;
 			_helper = helper;
 			_requestCreatorFactory = factory;
 		}
@@ -25,19 +27,19 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="poolTeams"></param>
 		/// <param name="startRowIndex"></param>
 		/// <returns></returns>
-		public PoolPlayInfo CreateStandingsRequests(DivisionSheetConfig config, PoolPlayInfo info, IEnumerable<Team> poolTeams, int startRowIndex)
+		public PoolPlayInfo CreateStandingsRequests(PoolPlayInfo info, IEnumerable<Team> poolTeams, int startRowIndex)
 		{
 			List<Request> requests = new List<Request>(_helper.StandingsTableColumns.Count + poolTeams.Count() * 2);
-			int teamCount = poolTeams.Count();
-			string firstTeamSheetCell = $"{ShootoutConstants.SHOOTOUT_SHEET_NAME}!{poolTeams.First().TeamSheetCell}";
+			Team firstTeam = poolTeams.First();
+			string firstTeamSheetCell = $"{ShootoutConstants.SHOOTOUT_SHEET_NAME}!{firstTeam.TeamSheetCell}";
 
 			// team name
-			Request teamNamesRequest = RequestCreator.CreateRepeatedSheetFormulaRequest(config.SheetId, startRowIndex, _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME), teamCount,
+			Request teamNamesRequest = RequestCreator.CreateRepeatedSheetFormulaRequest(_config.SheetId, startRowIndex, _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME), _config.TeamsPerPool,
 				$"={firstTeamSheetCell}");
 			requests.Add(teamNamesRequest);
 
 			int startGamesRowNum = startRowIndex + 1; // first row in first round is 3
-			int endGamesRowNum = GetEndGamesInPoolRowNumber(config, startGamesRowNum);
+			int endGamesRowNum = GetEndGamesInPoolRowNumber(_config, startGamesRowNum);
 
 			foreach (string hdr in _helper.StandingsTableColumns)
 			{
@@ -45,42 +47,57 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				if (requestCreator == null) // not all columns have formulas (yellow/red cards)
 					continue;
 
-				PsoStandingsRequestCreatorConfig creatorConfig = new PsoStandingsRequestCreatorConfig
+				StandingsRequestCreatorConfig creatorConfig;
+				if (hdr == ShootoutConstants.HDR_OVERALL_RANK)
 				{
-					StartGamesRowNum = startGamesRowNum,
-					EndGamesRowNum = endGamesRowNum,
-					FirstTeamsSheetCell = firstTeamSheetCell,
-					GamesPerRound = config.GamesPerRound,
-					NumberOfRounds = config.NumberOfRounds,
-					RowCount = poolTeams.Count(),
-					SheetId = config.SheetId,
-				};
+					creatorConfig = new OverallRankRequestCreatorConfig
+					{
+						SheetId = _config.SheetId,
+						StartGamesRowNum = startGamesRowNum,
+						SheetStartRowIndex = startRowIndex,
+						RowCount = _config.TeamsPerPool,
+						StandingsStartAndEndRowNums = info.StandingsStartAndEndRowNums,
+					};
+				}
+				else
+				{
+					creatorConfig = new PsoStandingsRequestCreatorConfig
+					{
+						SheetId = _config.SheetId,
+						StartGamesRowNum = startGamesRowNum,
+						SheetStartRowIndex = startRowIndex,
+						EndGamesRowNum = endGamesRowNum,
+						FirstTeamsSheetCell = firstTeamSheetCell,
+						GamesPerRound = _config.GamesPerRound,
+						NumberOfRounds = _config.NumberOfRounds,
+						RowCount = _config.TeamsPerPool,
+					};
+				}
 				Request request = requestCreator.CreateRequest(creatorConfig);
 				info.UpdateSheetRequests.Add(request);
 			}
 
 			// head-to-head tiebreakers
 
-			Team firstTeam = poolTeams.First();
 			System.Text.RegularExpressions.Regex reTeamCell = new System.Text.RegularExpressions.Regex(@"(A)(\d+)");
 			int startColumnIndex = _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()) + 1;
-			for (int i = 0; i < teamCount; i++)
+			for (int i = 0; i < _config.TeamsPerPool; i++)
 			{
 				IStandingsRequestCreator requestCreator = _requestCreatorFactory.GetRequestCreator(nameof(HeadToHeadComparisonRequestCreator));
 				Team team = poolTeams.ElementAt(i);
 				// we have to fix the opponent team cell
 				System.Text.RegularExpressions.GroupCollection groups = reTeamCell.Match(team.TeamSheetCell).Groups;
-				string opponentCell = $"{groups[1].Value}${groups[2].Value}";
+				string opponentCell = $"{ShootoutConstants.SHOOTOUT_SHEET_NAME}!{groups[1].Value}${groups[2].Value}";
 
 				HeadToHeadComparisonRequestCreatorConfig headToHeadConfig = new HeadToHeadComparisonRequestCreatorConfig
 				{
-					SheetId = config.SheetId,
+					SheetId = _config.SheetId,
 					ColumnIndex = startColumnIndex + i,
 					SheetStartRowIndex = startRowIndex,
-					RowCount = teamCount,
+					RowCount = _config.TeamsPerPool,
 					StartGamesRowNum = startGamesRowNum,
 					EndGamesRowNum = endGamesRowNum,
-					FirstTeamsSheetCell = firstTeam.TeamSheetCell,
+					FirstTeamsSheetCell = firstTeamSheetCell,
 					OpponentTeamSheetCell = opponentCell,
 				};
 
@@ -96,7 +113,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					Range = new DimensionRange
 					{
 						Dimension = "COLUMNS",
-						SheetId = config.SheetId,
+						SheetId = _config.SheetId,
 						StartIndex = startColumnIndex,
 						EndIndex = startColumnIndex + poolTeams.Count(),
 					},
@@ -119,7 +136,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <returns></returns>
 		private int GetEndGamesInPoolRowNumber(DivisionSheetConfig config, int startGamesRowNum)
 		{
-			int offset = (config.NumberOfRounds * config.GamesPerRound) + (config.NumberOfRounds - 1 * Constants.ROUND_OFFSET_STANDINGS_TABLE);
+			int offset = (config.NumberOfRounds * config.GamesPerRound) + ((config.NumberOfRounds - 1) * Constants.ROUND_OFFSET_STANDINGS_TABLE);
 			return startGamesRowNum + offset - 1; // if we have 10 rows total (including blank/header rows), A3:A12 includes 10 rows so -1 to make it work
 		}
 	}

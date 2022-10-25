@@ -30,14 +30,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				startRowIndex += 1; // startRowIndex is now the row with the round number and standings headers
 
 				// standings table
-				info = _standingsTableRequestCreator.CreateStandingsRequests(_config, info, pool, startRowIndex + 1);
+				info = _standingsTableRequestCreator.CreateStandingsRequests(info, pool, startRowIndex + 1);
 				int standingsStartRowNum = startRowIndex + 2;
 				info.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, standingsStartRowNum + _config.TeamsPerPool - 1)); // -1 because A3:A6 is 4 rows
 
 				// scoring rows
 				for (int i = 0; i < _config.NumberOfRounds; i++)
 				{
-					info = _inputsRequestCreator.CreateScoringRequests(_config, info, pool, i + 1, ref startRowIndex);
+					info = _inputsRequestCreator.CreateScoringRequests(info, pool, i + 1, ref startRowIndex);
 				}
 			}
 

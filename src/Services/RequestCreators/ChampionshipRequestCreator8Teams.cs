@@ -4,8 +4,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class ChampionshipRequestCreator8Teams : StandardChampionshipRequestCreator
 	{
-		public ChampionshipRequestCreator8Teams(string divisionName, DivisionSheetConfig config, PsoDivisionSheetHelper helper) 
-			: base(divisionName, config, helper)
+		public ChampionshipRequestCreator8Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper) 
+			: base(config, helper)
 		{
 		}
 
@@ -26,7 +26,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			string pool2 = info.Pools!.Last().First().PoolName;
 
 			// finals label row
-			UpdateRequest headerRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.HeaderRowColumns.Count - 1, "FINALS", 4, cell => cell.SetHeaderCellFormatting());
+			UpdateRequest headerRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()), "FINALS", 4, cell => cell.SetHeaderCellFormatting());
 			updateRequests.Add(headerRequest);
 			startRowIndex += 1;
 

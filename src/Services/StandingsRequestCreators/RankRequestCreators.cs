@@ -40,6 +40,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			: base(formGen, Constants.HDR_CALC_RANK)
 		{
 		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
+		{
+			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetCalculatedRankFormula(config.StartGamesRowNum, config.EndGamesRowNum, config.RowCount);
+		}
 	}
 
 	public class PoolWinnersCalculatedRankRequestCreator : StandingsRequestCreator

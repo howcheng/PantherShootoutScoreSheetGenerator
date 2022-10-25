@@ -3,6 +3,7 @@
 	public class DivisionSheetConfig
 	{
 		public int? SheetId { get; set; }
+		public string DivisionName { get; set; } = string.Empty;
 		public int NumberOfTeams { get; set; }
 		public int TeamsPerPool { get; set; }
 		public int NumberOfPools => NumberOfTeams / TeamsPerPool;

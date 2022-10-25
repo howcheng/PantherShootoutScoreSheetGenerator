@@ -28,11 +28,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			int startGamesRowNum = config.StartGamesRowNum;
 			for (int i = 0; i < config.NumberOfRounds; i++)
 			{
-				int endGamesRowNum = config.StartGamesRowNum - 1 + config.GamesPerRound; // NOTE: not the same as the EndGamesRowNum in the config object; if 2 games/round, then last row should be 4 (not 3+2, because it's cells A3:A4 inclusive)
+				int endGamesRowNum = startGamesRowNum - 1 + config.GamesPerRound; // NOTE: not the same as the EndGamesRowNum in the config object; if 2 games/round, then last row should be 4 (not 3+2, because it's cells A3:A4 inclusive)
 				sb.Append(_formulaGeneratorMethod(startGamesRowNum, endGamesRowNum, config.FirstTeamsSheetCell));
 				if (i < config.NumberOfRounds - 1)
 					sb.Append('+');
-				startGamesRowNum += config.GamesPerRound + 2; // +2 to account for the blank space and round header
+				startGamesRowNum += config.GamesPerRound + Constants.ROUND_OFFSET_STANDINGS_TABLE; // +2 to account for the blank space and round header
 			}
 
 			Request request = RequestCreator.CreateRepeatedSheetFormulaRequest(config.SheetId, config.SheetStartRowIndex, _columnIndex, config.RowCount,

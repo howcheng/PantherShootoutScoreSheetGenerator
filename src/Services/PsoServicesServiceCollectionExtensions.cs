@@ -55,10 +55,11 @@ namespace Microsoft.Extensions.DependencyInjection
 					break;
 			}
 			DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
-			divisionConfig.InjectFrom(config);
+			divisionConfig.TeamNameCellWidth = config.TeamNameCellWidth;
+			divisionConfig.DivisionName = divisionTeams.First().DivisionName;
 			services.AddSingleton<DivisionSheetConfig>(divisionConfig);
 			services.AddSingleton<IDivisionSheetGenerator>(provider => ActivatorUtilities.CreateInstance<DivisionSheetGenerator>(provider, divisionTeams));
-			services.AddSingleton(provider => (IChampionshipRequestCreator)ActivatorUtilities.CreateInstance(provider, championshipCreatorType, divisionTeams));
+			services.AddSingleton(provider => (IChampionshipRequestCreator)ActivatorUtilities.CreateInstance(provider, championshipCreatorType));
 
 			// register the correct request creators for the number of teams
 			string divisionName = divisionTeams.First().DivisionName;
@@ -82,9 +83,9 @@ namespace Microsoft.Extensions.DependencyInjection
 			}
 			services.AddSingleton<PsoDivisionSheetHelper>(helper);
 			services.AddSingleton<FormulaGenerator>(new PsoFormulaGenerator(helper));
-			services.AddSingleton(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType, divisionTeams));
-			services.AddSingleton<IScoreSheetHeadersRequestCreator>(provider => ActivatorUtilities.CreateInstance<ScoreSheetHeadersRequestCreator>(provider, divisionName));
-			services.AddSingleton<IScoreInputsRequestCreator>(provider => ActivatorUtilities.CreateInstance<ScoreInputsRequestCreator>(provider, divisionName));
+			services.AddSingleton<IPoolPlayRequestCreator>(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType));
+			services.AddSingleton<IScoreSheetHeadersRequestCreator, ScoreSheetHeadersRequestCreator>();
+			services.AddSingleton<IScoreInputsRequestCreator, ScoreInputsRequestCreator>();
 			services.AddSingleton<IStandingsTableRequestCreator, StandingsTableRequestCreator>();
 
 			Type winnerFormatCreatorType;
@@ -97,7 +98,7 @@ namespace Microsoft.Extensions.DependencyInjection
 					winnerFormatCreatorType = typeof(WinnerFormattingRequestsCreator);
 					break;
 			}
-			services.AddSingleton(provider => (IWinnerFormattingRequestsCreator)ActivatorUtilities.CreateInstance(provider, winnerFormatCreatorType, divisionName));
+			services.AddSingleton(provider => (IWinnerFormattingRequestsCreator)ActivatorUtilities.CreateInstance(provider, winnerFormatCreatorType));
 
 			return services;
 		}

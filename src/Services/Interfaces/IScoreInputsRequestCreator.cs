@@ -10,6 +10,6 @@
 		/// <param name="roundNum"></param>
 		/// <param name="startRowIndex">When passed in, this should be the index of the round label row; when complete, this should be the index for the start of the next round</param>
 		/// <returns></returns>
-		PoolPlayInfo CreateScoringRequests(DivisionSheetConfig config, PoolPlayInfo info, IEnumerable<Team> poolTeams, int roundNum, ref int startRowIndex);
+		PoolPlayInfo CreateScoringRequests(PoolPlayInfo info, IEnumerable<Team> poolTeams, int roundNum, ref int startRowIndex);
 	}
 }

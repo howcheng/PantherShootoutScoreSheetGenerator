@@ -7,12 +7,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class WinnerFormattingRequestsCreator : IWinnerFormattingRequestsCreator
 	{
-		protected readonly string _divisionName;
+		protected readonly DivisionSheetConfig _config;
 		protected readonly PsoDivisionSheetHelper _helper;
 
-		public WinnerFormattingRequestsCreator(string divisionName, PsoDivisionSheetHelper helper)
+		public WinnerFormattingRequestsCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
 		{
-			_divisionName = divisionName;
+			_config = config;
 			_helper = helper;
 		}
 
@@ -25,20 +25,20 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// Even though <see cref="ChampionshipInfo"/> inherits from <see cref="SheetRequests"/> it will already have its own requests as a result of <see cref="CreateChampionshipRequests(PoolPlayInfo)"/>
 		/// so that's why we are returning a new object
 		/// </remarks>
-		public SheetRequests CreateWinnerFormattingRequests(DivisionSheetConfig config, ChampionshipInfo info)
+		public SheetRequests CreateWinnerFormattingRequests(ChampionshipInfo info)
 		{
 			SheetRequests ret = new SheetRequests();
 			List<Request> requests = new List<Request>();
 
 			for (int i = 0; i < 4; i++)
 			{
-				Request formatRequest = CreateWinnerFormattingRequest(config, i + 1, info);
+				Request formatRequest = CreateWinnerFormattingRequest(i + 1, info);
 				requests.Add(formatRequest);
 			}
 
 			// legend -- we put this after the first standings table
 			int legendStartRowIdx = info.StandingsStartAndEndRowNums.First().Item2 + 1;
-			UpdateRequest legendRequest = new UpdateRequest(_divisionName)
+			UpdateRequest legendRequest = new UpdateRequest(_config.DivisionName)
 			{
 				RowStart = legendStartRowIdx,
 				ColumnStart = _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME),
@@ -59,7 +59,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				{
 					Range = new GridRange
 					{
-						SheetId = config.SheetId,
+						SheetId = _config.SheetId,
 						StartRowIndex = legendStartRowIdx,
 						StartColumnIndex = _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME),
 						EndRowIndex = legendStartRowIdx + 4,
@@ -88,7 +88,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="rank">This determines what the background color will be</param>
 		/// <param name="championshipInfo"></param>
 		/// <returns></returns>
-		protected virtual Request CreateWinnerFormattingRequest(DivisionSheetConfig config, int rank, ChampionshipInfo championshipInfo)
+		protected virtual Request CreateWinnerFormattingRequest(int rank, ChampionshipInfo championshipInfo)
 		{
 			// =OR(AND($A$30=$E3, $B$30>$C$30), AND($D$30=$E3, $B$30<$C$30)) -- game winner
 			// for loser, switch the positions of the < and >
@@ -110,10 +110,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				_helper.TeamNameColumnName
 			);
 
-			return CreateWinnerConditionalFormattingRequest(config, rank, formula, championshipInfo.StandingsStartAndEndIndices);
+			return CreateWinnerConditionalFormattingRequest(rank, formula, championshipInfo.StandingsStartAndEndIndices);
 		}
 
-		protected Request CreateWinnerConditionalFormattingRequest(DivisionSheetConfig config, int rank, string formula, IEnumerable<Tuple<int, int>> startAndEndRowIndices)
+		protected Request CreateWinnerConditionalFormattingRequest(int rank, string formula, IEnumerable<Tuple<int, int>> startAndEndRowIndices)
 		{
 			Color color = Colors.GetColorForRank(rank);
 			Request request = new Request
@@ -124,7 +124,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					{
 						Ranges = startAndEndRowIndices.Select(pair => new GridRange
 						{
-							SheetId = config.SheetId,
+							SheetId = _config.SheetId,
 							StartRowIndex = pair.Item1,
 							StartColumnIndex = _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME),
 							EndRowIndex = pair.Item2 + 1,

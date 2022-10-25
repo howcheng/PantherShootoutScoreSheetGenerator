@@ -1,4 +1,5 @@
 ﻿using Google.Apis.Sheets.v4.Data;
+using GoogleSheetsHelper;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services.Tests
@@ -10,11 +11,13 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		private readonly PsoFormulaGenerator _fg;
 		private const int TEAMS_PER_POOL = 4;
 		private const int START_ROW_NUM = 3;
+		private const int GAMES_PER_ROUND = 2;
+		private const int NUM_ROUNDS = 3;
 
 		public StandingsRequestCreatorTests()
 		{
 			_fixture = new Fixture();
-			_helper = new PsoDivisionSheetHelper(new DivisionSheetConfig { GamesPerRound = 2, NumberOfRounds = 3, TeamsPerPool = TEAMS_PER_POOL});
+			_helper = new PsoDivisionSheetHelper(new DivisionSheetConfig { GamesPerRound = GAMES_PER_ROUND, NumberOfRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL });
 			_fg = new PsoFormulaGenerator(_helper);
 		}
 
@@ -153,7 +156,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			PoolWinnersRankWithTiebreakerRequestCreator creator = new PoolWinnersRankWithTiebreakerRequestCreator(fg);
 			Request request = creator.CreateRequest(config);
 
-			string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(config.StartGamesRowNum, config.EndGamesRowNum);
+			string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(config.StartGamesRowNum, config.StartGamesRowNum + TEAMS_PER_POOL - 1);
 			ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK));
 		}
 

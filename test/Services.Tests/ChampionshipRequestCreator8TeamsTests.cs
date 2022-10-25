@@ -8,8 +8,9 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public void CanCreateChampionshipRequests()
 		{
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
+			config.DivisionName = ShootoutConstants.DIV_10UB;
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			ChampionshipRequestCreator8Teams creator = new ChampionshipRequestCreator8Teams(ShootoutConstants.DIV_10UB, config, helper);
+			ChampionshipRequestCreator8Teams creator = new ChampionshipRequestCreator8Teams(config, helper);
 
 			List<Team> teams = CreateTeams(config);
 			PoolPlayInfo info = new PoolPlayInfo(teams)
@@ -26,7 +27,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			// expect 5 values updates: 1 for the label, 1 subheader and game input row each for the consolation and championship
 			Action<string, int, Tuple<int, int>> assertChampionshipTeamFormula = (f, poolRank, items) =>
 			{
-				string expected = string.Format("=IF(COUNTIF(F{0}:F{1},\"=3\")=4, VLOOKUP({2},{{M{0}:M{1},E{0}:E{1}}},2,FALSE), \"\")", items.Item1, items.Item2, poolRank);
+				string expected = string.Format("=IF(COUNTIF(G{0}:G{1},\"=3\")=4, VLOOKUP({2},{{N{0}:N{1},F{0}:F{1}}},2,FALSE), \"\")", items.Item1, items.Item2, poolRank);
 				Assert.Equal(expected, f);
 			};
 			Action<UpdateRequest, int, int> assertChampionshipScoreEntry = (rq, rank, rowIdx) =>

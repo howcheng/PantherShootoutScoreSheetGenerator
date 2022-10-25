@@ -5,8 +5,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public abstract class StandardChampionshipRequestCreator : ChampionshipRequestCreator
 	{
-		protected StandardChampionshipRequestCreator(string divisionName, DivisionSheetConfig config, PsoDivisionSheetHelper helper)
-			: base(divisionName, config, helper)
+		protected StandardChampionshipRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+			: base(config, helper)
 		{
 		}
 
@@ -22,7 +22,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected UpdateRequest CreateChampionshipHeaderRow(int startRowIndex, string label)
 		{
-			UpdateRequest request = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_TEAM), label, 0, cell => cell.SetSubheaderCellFormatting());
+			UpdateRequest request = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(_helper.HeaderRowColumns.Last()), label, 0, cell => cell.SetSubheaderCellFormatting());
 			return request;
 		}
 

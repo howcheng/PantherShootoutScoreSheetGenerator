@@ -70,6 +70,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				, cell => Assert.Equal(totalFormula, cell.FormulaValue)
 				, cell => Assert.Equal(rankFormula, cell.FormulaValue)
 			);
+
+			Assert.Equal($"A{EXPECTED_START_ROW}", team.TeamSheetCell);
 		}
 
 		[Fact]
@@ -87,10 +89,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Sheet sheet = new Sheet
 			{
 				Properties = fixture.Create<SheetProperties>(),
-				ConditionalFormats = fixture.CreateMany<ConditionalFormatRule>().ToList()
 			};
 
 			Mock<ISheetsClient> mockClient = new Mock<ISheetsClient>();
+			mockClient.Setup(x => x.CreateSpreadsheet(It.IsAny<string>(), It.IsAny<CancellationToken>()));
 			mockClient.Setup(x => x.GetOrAddSheet(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync(sheet);
 
 			IList<AppendRequest>? appendRequests = null;
@@ -98,13 +100,23 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>())).Callback(appendCallback);
 
 			IEnumerable<Request>? updateRequests = null;
+			string? newSheetName = null;
+			Action<IEnumerable<Request>, CancellationToken> updateNameCallback = (rqs, ct) => newSheetName = rqs.Single().UpdateSheetProperties.Properties.Title;
+			mockClient.Setup(x => x.ExecuteRequests(It.Is<IEnumerable<Request>>(rqs => rqs.Count() == 1), It.IsAny<CancellationToken>())).Callback(updateNameCallback);
+
 			Action<IEnumerable<Request>, CancellationToken> updateCallback = (rqs, ct) => updateRequests = rqs;
-			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>())).Callback(updateCallback);
+			mockClient.Setup(x => x.ExecuteRequests(It.Is<IEnumerable<Request>>(rqs => rqs.Count() > 1), It.IsAny<CancellationToken>())).Callback(updateCallback);
 
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 			await service.GenerateSheet(allTeams);
 
+			// all teams should have a team sheet cell value
+			Assert.All(allTeams, div => Assert.All(div.Value, team => Assert.NotEmpty(team.TeamSheetCell)));
+
 			// verify the data updates
+			Assert.NotNull(newSheetName);
+			Assert.Equal(ShootoutConstants.SHOOTOUT_SHEET_NAME, newSheetName);
+
 			Assert.NotNull(appendRequests);
 			Assert.Equal(allTeams.Count, appendRequests!.Count);
 			Assert.All(appendRequests!, rq => Assert.Equal(2 + QUANTITY, rq.Rows.Count)); // 1 row per team + 2 header rows
@@ -159,14 +171,26 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			});
 
 			// verify the conditional format requests: 2 per division
-			Assert.NotNull(updateRequests);
-			Assert.Equal(ShootoutConstants.DivisionNames.Count() * 2 + 1, updateRequests!.Count()); // +1 for the sheet renaming request
+			IEnumerable<Request> formatRequests = updateRequests!.Where(rq => rq.AddConditionalFormatRule != null);
+			Assert.Equal(ShootoutConstants.DivisionNames.Count() * 2, formatRequests.Count());
 
-			Assert.NotNull(updateRequests!.First().UpdateSheetProperties);
-			Assert.Equal(ShootoutConstants.SHOOTOUT_SHEET_NAME, updateRequests!.First().UpdateSheetProperties.Properties.Title);
+			Queue<int> expectedRowIndices = new Queue<int>(ShootoutConstants.DivisionNames.Select((div, idx) => idx * QUANTITY + (idx + 1) * 2));
 
-			Action<Request> assertFormattingExists = r => Assert.NotNull(r.AddConditionalFormatRule);
-			Assert.All(updateRequests!.Skip(1), rq => assertFormattingExists(rq));
+			Action<Request> assertConditionalFormatting = r => Assert.NotNull(r.AddConditionalFormatRule);
+			Assert.All(formatRequests, rq => assertConditionalFormatting(rq));
+
+			for (int i = 0; i < formatRequests.Count(); i += 2)
+			{
+				int expectedRowIdx = expectedRowIndices.Dequeue();
+				Request req1 = formatRequests.ElementAt(i);
+				Request req2 = formatRequests.ElementAt(i + 1);
+				Assert.Equal(expectedRowIdx, req1.AddConditionalFormatRule.Rule.Ranges.First().StartRowIndex);
+				Assert.Equal(expectedRowIdx, req2.AddConditionalFormatRule.Rule.Ranges.First().StartRowIndex);
+			}
+
+			// verify the resize requests: 5 columns
+			IEnumerable<Request> resizeRequests = updateRequests!.Where(rq => rq.UpdateDimensionProperties != null);
+			Assert.Equal(ShootoutSheetService.HeaderRowColumns.Count() - 1, resizeRequests.Count());
 		}
 	}
 }
