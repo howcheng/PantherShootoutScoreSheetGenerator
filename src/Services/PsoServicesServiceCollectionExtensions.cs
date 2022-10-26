@@ -70,7 +70,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			{
 				case 10:
 					helper = new PsoDivisionSheetHelper10Teams(divisionConfig);
-					poolPlayCreatorType = typeof(PoolPlayRequestCreator);
+					poolPlayCreatorType = typeof(PoolPlayRequestCreator10Teams);
 					break;
 				case 12:
 					helper = new PsoDivisionSheetHelper12Teams(divisionConfig);
@@ -83,7 +83,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			}
 			services.AddSingleton<PsoDivisionSheetHelper>(helper);
 			services.AddSingleton<FormulaGenerator>(new PsoFormulaGenerator(helper));
-			services.AddSingleton<IPoolPlayRequestCreator>(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType));
+			services.AddSingleton(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType));
 			services.AddSingleton<IScoreSheetHeadersRequestCreator, ScoreSheetHeadersRequestCreator>();
 			services.AddSingleton<IScoreInputsRequestCreator, ScoreInputsRequestCreator>();
 			services.AddSingleton<IStandingsTableRequestCreator, StandingsTableRequestCreator>();

@@ -25,7 +25,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			string pool2 = ret.Pools!.Last().First().PoolName;
 
 			// finals label row
-			UpdateRequest labelRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.HeaderRowColumns.Count - 1, "FINALS", 4, cell => cell.SetHeaderCellFormatting());
+			UpdateRequest labelRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.StandingsTableColumns.Count - 1, "FINALS", 4, cell => cell.SetHeaderCellFormatting());
 			updateRequests.Add(labelRequest);
 			startRowIndex += 1;
 

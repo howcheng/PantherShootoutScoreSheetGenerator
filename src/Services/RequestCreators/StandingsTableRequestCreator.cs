@@ -47,32 +47,17 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				if (requestCreator == null) // not all columns have formulas (yellow/red cards)
 					continue;
 
-				StandingsRequestCreatorConfig creatorConfig;
-				if (hdr == ShootoutConstants.HDR_OVERALL_RANK)
+				PsoStandingsRequestCreatorConfig creatorConfig = new PsoStandingsRequestCreatorConfig
 				{
-					creatorConfig = new OverallRankRequestCreatorConfig
-					{
-						SheetId = _config.SheetId,
-						StartGamesRowNum = startGamesRowNum,
-						SheetStartRowIndex = startRowIndex,
-						RowCount = _config.TeamsPerPool,
-						StandingsStartAndEndRowNums = info.StandingsStartAndEndRowNums,
-					};
-				}
-				else
-				{
-					creatorConfig = new PsoStandingsRequestCreatorConfig
-					{
-						SheetId = _config.SheetId,
-						StartGamesRowNum = startGamesRowNum,
-						SheetStartRowIndex = startRowIndex,
-						EndGamesRowNum = endGamesRowNum,
-						FirstTeamsSheetCell = firstTeamSheetCell,
-						GamesPerRound = _config.GamesPerRound,
-						NumberOfRounds = _config.NumberOfRounds,
-						RowCount = _config.TeamsPerPool,
-					};
-				}
+					SheetId = _config.SheetId,
+					StartGamesRowNum = startGamesRowNum,
+					SheetStartRowIndex = startRowIndex,
+					EndGamesRowNum = endGamesRowNum,
+					FirstTeamsSheetCell = firstTeamSheetCell,
+					GamesPerRound = _config.GamesPerRound,
+					NumberOfRounds = _config.NumberOfRounds,
+					RowCount = _config.TeamsPerPool,
+				};
 				Request request = requestCreator.CreateRequest(creatorConfig);
 				info.UpdateSheetRequests.Add(request);
 			}

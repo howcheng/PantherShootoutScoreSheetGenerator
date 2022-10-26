@@ -25,32 +25,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			PoolPlayInfo12Teams ret = new PoolPlayInfo12Teams(base.CreatePoolPlayRequests(info));
 			_divisionName = info.Pools!.First().First().DivisionName;
 
-			//// headers for helper cells
-			//// add more columns to the sheet
-			//Request resizeSheetRequest = new Request
-			//{
-			//	UpdateSheetProperties = new UpdateSheetPropertiesRequest
-			//	{
-			//		Properties = new SheetProperties
-			//		{
-			//			GridProperties = new GridProperties
-			//			{
-			//				ColumnCount = 30,
-			//			},
-			//			SheetId = _config.SheetId,
-			//		},
-			//		Fields = "gridProperties(columnCount)",
-			//	}
-			//};
-			//// send this request now otherwise we'll get an error when trying to do the below updates
-			//await _sheetsClient.ExecuteRequests(new List<Request> { resizeSheetRequest });
-
 			List<UpdateRequest> updateRequests = new List<UpdateRequest>(ret.UpdateValuesRequests);
 			// headers for pool winners section
 			int startRowIdx = ret.StandingsStartAndEndRowNums.First().Item1 - 2;
+			int startColIdx = _helper.GetColumnIndexByHeader(PsoDivisionSheetHelper.WinnerAndPointsColumns.Last()) + 1;
 			UpdateRequest poolWinnersHeaderRequest = new UpdateRequest(_divisionName)
 			{
-				RowStart = startRowIdx
+				RowStart = startRowIdx,
+				ColumnStart = startColIdx,
 			};
 			poolWinnersHeaderRequest.Rows.Add(_helper.CreateHeaderRow(PsoDivisionSheetHelper12Teams.PoolWinnersHeaderRow));
 			updateRequests.Add(poolWinnersHeaderRequest);
@@ -61,6 +43,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			UpdateRequest runnersUpHeaderRequest = new UpdateRequest(_divisionName)
 			{
 				RowStart = startRowIdx,
+				ColumnStart = startColIdx,
 			};
 			runnersUpHeaderRequest.Rows.Add(_helper.CreateHeaderRow(PsoDivisionSheetHelper12Teams.RunnersUpHeaderRow));
 			updateRequests.Add(runnersUpHeaderRequest);
@@ -68,29 +51,30 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			ret.UpdateValuesRequests = updateRequests;
 
 			// formulas for pool-winners and runners-up
-			ret = CreateHelperFormulaRequests(ret);
+			ret = CreatePoolWinnersFormulasRequests(ret);
 			return ret;
 		}
 
-		private PoolPlayInfo12Teams CreateHelperFormulaRequests(PoolPlayInfo12Teams info)
+		private PoolPlayInfo12Teams CreatePoolWinnersFormulasRequests(PoolPlayInfo12Teams info)
 		{
 			int startRowNum = info.StandingsStartAndEndRowNums.First().Item1;
 			int poolCount = _config.NumberOfPools;
 			int endRowNum = startRowNum + poolCount - 1;
-			info.HelperCellStartAndEndRowNums.Add(new Tuple<int, int>(startRowNum, endRowNum));
+			int startColIdx = _helper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNERS);
+			info.PoolWinnersStartAndEndRowNums.Add(new Tuple<int, int>(startRowNum, endRowNum));
 			UpdateRequest poolWinnersRequest = new UpdateRequest(_divisionName)
 			{
 				RowStart = startRowNum - 1,
-				ColumnStart = _helper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK),
+				ColumnStart = startColIdx,
 			};
 
 			startRowNum = endRowNum + 2;
 			endRowNum = startRowNum + poolCount - 1;
-			info.HelperCellStartAndEndRowNums.Add(new Tuple<int, int>(startRowNum, endRowNum));
+			info.PoolWinnersStartAndEndRowNums.Add(new Tuple<int, int>(startRowNum, endRowNum));
 			UpdateRequest runnersUpRequest = new UpdateRequest(_divisionName)
 			{
 				RowStart = startRowNum - 1,
-				ColumnStart = poolWinnersRequest.ColumnStart,
+				ColumnStart = startColIdx,
 			};
 
 			int poolWinnersStartRowNum = info.StandingsStartAndEndRowNums.First().Item1;

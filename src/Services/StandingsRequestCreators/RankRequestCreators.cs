@@ -58,7 +58,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected override string GenerateFormula(StandingsRequestCreatorConfig config) // we're just wrapping the regular formula with IFNA( ... , "")
 		{
 			string columnName = _formulaGenerator.SheetHelper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_PTS);
-			return $"=IFNA({_formulaGenerator.GetTeamRankFormula(columnName, config.StartGamesRowNum, config.StartGamesRowNum, config.RowCount)}, \"\")";
+			return $"=IFNA({_formulaGenerator.GetTeamRankFormula(columnName, config.StartGamesRowNum, config.StartGamesRowNum, config.StartGamesRowNum + config.RowCount - 1)}, \"\")";
 		}
 	}
 
@@ -74,5 +74,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			OverallRankRequestCreatorConfig config = (OverallRankRequestCreatorConfig)cfg;
 			return ((PsoFormulaGenerator)_formulaGenerator).GetOverallRankFormula(config.StartGamesRowNum, config.StandingsStartAndEndRowNums);
 		}
+
+		public override bool IsApplicableToColumn(string columnHeader) => false; // execution of this guy has to be deferred until after the standings tables are created
 	}
 }

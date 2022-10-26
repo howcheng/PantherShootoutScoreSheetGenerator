@@ -18,6 +18,6 @@
 		/// <summary>
 		/// Holds the start and end row numbers for the pool winners and runners up sections. Item1 is the start row number, and Item2 is the end row number
 		/// </summary>
-		public List<Tuple<int, int>> HelperCellStartAndEndRowNums { get; set; } = new List<Tuple<int, int>>();
+		public List<Tuple<int, int>> PoolWinnersStartAndEndRowNums { get; set; } = new List<Tuple<int, int>>();
 	}
 }

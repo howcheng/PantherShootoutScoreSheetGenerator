@@ -95,7 +95,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		[Fact]
 		public void TestOverallRankFormula()
 		{
-			const string expected = "=RANK(O3, {O$3:O$7,O$24:O$28})";
+			const string expected = "=RANK(M3, {M$3:M$7,M$24:M$28})";
 
 			PsoFormulaGenerator fg = GetFormulaGenerator(10);
 			List<Tuple<int, int>> startAndEnd = new List<Tuple<int, int>>

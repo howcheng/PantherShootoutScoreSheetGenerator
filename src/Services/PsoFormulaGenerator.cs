@@ -118,9 +118,6 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			string teamNameCell = firstTeamCell;
 			string opponentNameCell = opponentCell;
 
-			// SWITCH(ArrayFormula(VLOOKUP(Shootout!A$17&Shootout!A18,{A$3:A$12&D$3:D$12, P$3:P$12},2,false)), "H", "W", "A", "L", "D", "D")
-			// in the row where home team and away team are the given values, get the value from the winning team column and put "W" "L" or "D" as indicated
-			// swap the home and away teams when forHomeTeam == false
 			return string.Format("SWITCH(ArrayFormula(VLOOKUP({0}&{1},{{{2}&{3}, {4}}}, 2, FALSE)), \"{5}\", \"{8}\", \"{6}\", \"{9}\", \"{7}\", \"{7}\")",
 				forHomeTeam ? teamNameCell : opponentNameCell,
 				forHomeTeam ? opponentNameCell : teamNameCell,
@@ -166,11 +163,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			string cellRange = Utilities.CreateCellRangeString(calcRankColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
 			string firstRankCell = $"{calcRankColumnName}{startRowNum}";
 			string firstTiebreakerCell = $"{_helper.TiebreakerColumnName}{startRowNum}";
-			string rankWithTbFormula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {0}, NOT({2}), {0}+1, {2}, {0})",
+			string formula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {0}, NOT({2}), {0}+1, {2}, {0})",
 				firstRankCell,
 				cellRange,
 				firstTiebreakerCell);
-			return rankWithTbFormula;
+			return formula;
 		}
 
 		/// <summary>
@@ -225,7 +222,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="standingsEndRowNum"></param>
 		/// <param name="rank"></param>
 		/// <returns></returns>
-		/// <remarks>=IF(W3=3, VLOOKUP(1,{M3:M6,L3:L6},2,FALSE), 0)
+		/// <remarks>=IF(W3=3, VLOOKUP(1,{M3:M6,L3:L6},2,FALSE), "")
 		/// = if # of games played = 3, get the value of the points column from the standings table where rank = 1 (or 2), else blank
 		/// </remarks>
 		public string GetPoolWinnersGamePointsFormula(int startRowNum, int standingsStartRowNum, int standingsEndRowNum, int rank)
@@ -242,17 +239,17 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="standingsStartRowNum"></param>
 		/// <param name="standingsEndRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=VLOOKUP(1,{M3:M6,F3:F6},2,FALSE)
-		/// = get the value of the games played column from the standings table where rank = 1 (or 2)
+		/// <remarks>=IF(COUNTIF(F3:F6,3)=4, VLOOKUP(1,{M3:M6,F3:F6},2,FALSE), "")
+		/// = if all teams in pool have played 3 games, get the value of the games played column from the standings table where rank = 1 (or 2), else blank
 		/// </remarks>
 		public string GetPoolWinnersGamesPlayedFormula(int standingsStartRowNum, int standingsEndRowNum)
 		{
 			string rankCellRange = GetRankCellRangeForPoolWinnersFormulas(standingsStartRowNum, standingsEndRowNum);
 			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, standingsStartRowNum, standingsEndRowNum);
-			return $"=VLOOKUP(1,{{{rankCellRange},{gamesPlayedCellRange}}},2,FALSE)";
+			return $"=IF(COUNTIF({gamesPlayedCellRange},3)=4, VLOOKUP(1,{{{rankCellRange},{gamesPlayedCellRange}}},2,FALSE), \"\")";
 		}
 
-		private string GetGamesPlayedCellForPoolWinnersFormulas(int startRowNum) => $"{_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED)}{startRowNum}";
+		private string GetGamesPlayedCellForPoolWinnersFormulas(int startRowNum) => Utilities.CreateCellReference(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED), startRowNum);
 		private string GetRankCellRangeForPoolWinnersFormulas(int startRowNum, int endRowNum) => Utilities.CreateCellRangeString(_helper.RankColumnName, startRowNum, endRowNum);
 
 		/// <summary>
@@ -270,13 +267,61 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 
 		/// <summary>
+		/// Gets the formula to set up the conditional formatting to highlight the winners in the standings tables
+		/// </summary>
+		/// <param name="rank"></param>
+		/// <param name="gameRowNum">Row number of the championship or consolation game</param>
+		/// <param name="startRowNum">Start row number of the standings table</param>
+		/// <returns></returns>
+		/// <remarks>=OR(AND($A$30=$E3, $B$30>$C$30), AND($D$30=$E3, $B$30<$C$30)) -- game winner
+		/// = true if the team is the home team in the final game and the home score is greater than the away score, or vice versa
+		/// for game losers, flip the comparion operators
+		/// </remarks>
+		public string GetConditionalFormattingForWinnerFormula(int rank, int gameRowNum, int startRowNum)
+		{
+			int standingsStartRowNum = startRowNum;
+			char comparison1 = (rank % 2 == 1) ? '>' : '<';
+			char comparison2 = (rank % 2 == 1) ? '<' : '>';
+			return string.Format("=OR(AND(${4}${0}=${8}{1}, ${5}${0}{2}${6}${0}), AND(${7}${0}=${8}{1}, ${5}${0}{3}${6}${0}))",
+				gameRowNum,
+				standingsStartRowNum,
+				comparison1,
+				comparison2,
+				_helper.HomeTeamColumnName,
+				_helper.HomeGoalsColumnName,
+				_helper.AwayGoalsColumnName,
+				_helper.AwayTeamColumnName,
+				_helper.TeamNameColumnName
+			);
+		}
+
+		/// <summary>
+		/// Gets the formula to set up the conditional formatting to highlight the winners in the standings tables in a 10-team division
+		/// </summary>
+		/// <param name="rank"></param>
+		/// <param name="standingsStartAndEndRowNums"></param>
+		/// <param name="startRowNum"></param>
+		/// <returns></returns>
+		/// <remarks>=AND($M3=1,COUNTIF($N$3:$N$7,"=4")=5,COUNTIF($N$24:$N$28,"=4")=5)
+		/// = true when value of rank cell == <paramref name="rank"/>, and all teams have played 5 games
+		/// </remarks>
+		public string GetConditionalFormattingForWinnerFormula10Teams(int rank, List<Tuple<int, int>> standingsStartAndEndRowNums, int startRowNum)
+		{
+			string rankCell = $"${_helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK)}{startRowNum}";
+			Func<Tuple<int, int>, string> getRange = pair => Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, pair.Item1, pair.Item2, CellRangeOptions.FixColumn | CellRangeOptions.FixRow);
+			string pool1Range = getRange(standingsStartAndEndRowNums.First());
+			string pool2Range = getRange(standingsStartAndEndRowNums.Last());
+			return $"=AND({rankCell}={rank},COUNTIF({pool1Range},\"=4\")=5,COUNTIF({pool2Range},\"=4\")=5)";
+		}
+
+		/// <summary>
 		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
 		/// </summary>
 		/// <returns></returns>
 		/// <remarks>=RANK(L3, {L$3:L$7,L$24:L$28})</remarks>
 		public string GetOverallRankFormula(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
 		{
-			string columnName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK);
+			string columnName = _helper.GetColumnNameByHeader(Constants.HDR_GAME_PTS);
 			string cellRanges = standingsStartAndEndRowNums.Select(item => Utilities.CreateCellRangeString(columnName, item.Item1, item.Item2, CellRangeOptions.FixRow))
 				.Aggregate((s1, s2) => $"{s1},{s2}");
 			return $"=RANK({columnName}{rowNum}, {{{cellRanges}}})";

@@ -25,13 +25,15 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			List<UpdateRequest> updateRequests = new List<UpdateRequest>();
 
 			// finals label row
-			updateRequests.Add(Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()), "FINALS", 4));
+			updateRequests.Add(Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()), "FINALS", 4, cell => cell.SetHeaderCellFormatting()));
 
 			// championship and consolation headers and teams
 			updateRequests.AddRange(CreateHeaderAndTeamRows(info, false, ref startRowIndex, ref startRowNum, "3RD-PLACE: pool-winner with least pts v 2nd-place team with most pts"));
 			ret.ThirdPlaceGameRowNum = startRowNum;
 			updateRequests.AddRange(CreateHeaderAndTeamRows(info, true, ref startRowIndex, ref startRowNum, "CHAMPIONSHIP: pool-winners with most pts"));
 			ret.ChampionshipGameRowNum = startRowNum;
+
+			ret.UpdateValuesRequests.AddRange(updateRequests);
 			return ret;
 		}
 
@@ -50,24 +52,24 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 			string homeFormula = GetTeamFormula(isChampionship ? 1 : 3, poolPlayInfo);
 			string awayFormula = GetTeamFormula(isChampionship ? 2 : 4, poolPlayInfo);
-			updateRequests.Add(CreateChampionshipGameRequests(startRowNum, homeFormula, awayFormula));
+			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
 			return updateRequests;
 		}
 
 		private string GetTeamFormula(int rank, PoolPlayInfo inf)
 		{
 			PoolPlayInfo12Teams info = (PoolPlayInfo12Teams)inf;
-			int helperCellsStartRowNum = rank <= 3 ? info.HelperCellStartAndEndRowNums.First().Item1 : info.HelperCellStartAndEndRowNums.Last().Item1;
-			int helperCellsEndRowNum = rank <= 3 ? info.HelperCellStartAndEndRowNums.First().Item2 : info.HelperCellStartAndEndRowNums.Last().Item2;
-			// =IF(COUNT(W3:W5,"=3")=3, VLOOKUP([rank],{V3:V5,T3:T5},2,FALSE), "")
+			int poolWinnersStartRowNum = rank <= 3 ? info.PoolWinnersStartAndEndRowNums.First().Item1 : info.PoolWinnersStartAndEndRowNums.Last().Item1;
+			int poolWinnersEndRowNum = rank <= 3 ? info.PoolWinnersStartAndEndRowNums.First().Item2 : info.PoolWinnersStartAndEndRowNums.Last().Item2;
+			// =IF(COUNTIF(W3:W5,3)=3, VLOOKUP([rank],{V3:V5,T3:T5},2,FALSE), "")
 			// if not all games played yet do nothing
 			// otherwise get the name of the team with rank N from the pool-winners or runners-up ranges
-			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED), helperCellsStartRowNum, helperCellsEndRowNum);
-			string rankCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK), helperCellsStartRowNum, helperCellsEndRowNum);
-			string teamNameCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNERS), helperCellsStartRowNum, helperCellsEndRowNum);
+			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED), poolWinnersStartRowNum, poolWinnersEndRowNum);
+			string rankCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK), poolWinnersStartRowNum, poolWinnersEndRowNum);
+			string teamNameCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNERS), poolWinnersStartRowNum, poolWinnersEndRowNum);
 
 			int rankForVlookup = rank <= 3 ? rank : 1; // rank 4 = top 2nd-place team
-			return $"=IF(COUNTIF({gamesPlayedCellRange}, \"=3\")=3, VLOOKUP({rankForVlookup},{{{rankCellRange},{teamNameCellRange}}},2,FALSE), \"\")";
+			return $"=IF(COUNTIF({gamesPlayedCellRange}, 3)=3, VLOOKUP({rankForVlookup},{{{rankCellRange},{teamNameCellRange}}},2,FALSE), \"\")";
 		}
 	}
 }

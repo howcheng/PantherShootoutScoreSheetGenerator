@@ -28,7 +28,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_formulaGenerator = (PsoFormulaGenerator)formGen;
 		}
 
-		public string ColumnHeader => throw new NotImplementedException();
+		public string ColumnHeader => string.Empty;
 
 		/// <summary>
 		/// HACK: Because the head-to-head comparison columns don't have headers, we are just going to use the class name, seeing as how

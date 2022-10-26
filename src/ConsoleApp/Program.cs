@@ -113,6 +113,8 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 				IDivisionSheetGenerator creator = divisionSheetProvider.GetRequiredService<IDivisionSheetGenerator>();
 				await creator.CreateSheet();
 			}
+
+			logger.LogInformation("All done!");
 		}
 	}
 }

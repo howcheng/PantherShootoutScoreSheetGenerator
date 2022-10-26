@@ -8,12 +8,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	public class WinnerFormattingRequestsCreator : IWinnerFormattingRequestsCreator
 	{
 		protected readonly DivisionSheetConfig _config;
+		protected readonly PsoFormulaGenerator _formulaGenerator;
 		protected readonly PsoDivisionSheetHelper _helper;
 
-		public WinnerFormattingRequestsCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+		public WinnerFormattingRequestsCreator(DivisionSheetConfig config, FormulaGenerator fg)
 		{
 			_config = config;
-			_helper = helper;
+			_formulaGenerator = (PsoFormulaGenerator)fg;
+			_helper = (PsoDivisionSheetHelper)fg.SheetHelper;
 		}
 
 		/// <summary>
@@ -90,26 +92,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <returns></returns>
 		protected virtual Request CreateWinnerFormattingRequest(int rank, ChampionshipInfo championshipInfo)
 		{
-			// =OR(AND($A$30=$E3, $B$30>$C$30), AND($D$30=$E3, $B$30<$C$30)) -- game winner
-			// for loser, switch the positions of the < and >
-
 			bool isChampionship = rank <= 2;
 			int gameRowNum = isChampionship ? championshipInfo.ChampionshipGameRowNum : championshipInfo.ThirdPlaceGameRowNum;
-			int standingsStartRowNum = championshipInfo.FirstStandingsRowNum;
-			char comparison1 = (rank % 2 == 1) ? '>' : '<';
-			char comparison2 = (rank % 2 == 1) ? '<' : '>';
-			string formula = string.Format("=OR(AND(${4}${0}=${8}{1}, ${5}${0}{2}${6}${0}), AND(${7}${0}=${8}{1}, ${5}${0}{3}${6}${0}))",
-				gameRowNum,
-				standingsStartRowNum,
-				comparison1,
-				comparison2,
-				_helper.HomeTeamColumnName,
-				_helper.HomeGoalsColumnName,
-				_helper.AwayGoalsColumnName,
-				_helper.AwayTeamColumnName,
-				_helper.TeamNameColumnName
-			);
-
+			string formula = _formulaGenerator.GetConditionalFormattingForWinnerFormula(rank, gameRowNum, championshipInfo.FirstStandingsRowNum);
 			return CreateWinnerConditionalFormattingRequest(rank, formula, championshipInfo.StandingsStartAndEndIndices);
 		}
 
@@ -126,9 +111,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 						{
 							SheetId = _config.SheetId,
 							StartRowIndex = pair.Item1,
-							StartColumnIndex = _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME),
+							StartColumnIndex = _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.First()),
 							EndRowIndex = pair.Item2 + 1,
-							EndColumnIndex = _helper.GetColumnIndexByHeader(Constants.HDR_CALC_RANK),
+							EndColumnIndex = _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()) + 1,
 						}).ToList(),
 						BooleanRule = new BooleanRule
 						{
