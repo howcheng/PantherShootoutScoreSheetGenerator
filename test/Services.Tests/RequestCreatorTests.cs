@@ -57,6 +57,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			);
 
 			Assert.Single(info.UpdateSheetRequests); // for the tiebreaker note
+			Request noteRequest = info.UpdateSheetRequests.Single();
+			Assert.NotNull(noteRequest.UpdateCells);
+			Assert.Equal(START_ROW_IDX + 1, noteRequest.UpdateCells.Range.StartRowIndex);
+			Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER), noteRequest.UpdateCells.Range.StartColumnIndex);
 		}
 
 		private void ValidateGameRanges(Request request, DivisionSheetConfig config)

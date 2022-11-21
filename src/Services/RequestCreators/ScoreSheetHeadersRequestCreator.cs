@@ -7,11 +7,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	public class ScoreSheetHeadersRequestCreator : IScoreSheetHeadersRequestCreator
 	{
 		private readonly string _divisionName;
+		private readonly DivisionSheetConfig _config;
 		private readonly PsoDivisionSheetHelper _helper;
 
 		public ScoreSheetHeadersRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
 		{
 			_divisionName = config.DivisionName;
+			_config = config;
 			_helper = helper;
 		}
 
@@ -58,6 +60,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				{
 					Range = new GridRange
 					{
+						SheetId = _config.SheetId,
 						StartRowIndex = headerRowIndex,
 						EndRowIndex = headerRowIndex + 1,
 						StartColumnIndex = tiebreakerColIdx,
@@ -69,7 +72,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 						{
 							Values = new List<CellData>
 							{
-								new CellData { Note = "In case of a tie, please check for the winner of the tiebreaker (it's too difficult to calculate it automatically)" }
+								new CellData { Note = "In case of a tie, please check to indicate the winner of the tiebreaker (it's too difficult to calculate it automatically)" }
 							}
 						}
 					},
