@@ -50,7 +50,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				_config.SheetId = SheetId = sheet.Properties.SheetId;
 			}
 
-			// first, expand the sheet because we be wiiiiiide
+			// first, expand the sheet because we be wiiiiiide (only 26 columns are available otherwise)
 			Request resizeSheetRequest = new Request
 			{
 				UpdateSheetProperties = new UpdateSheetPropertiesRequest
