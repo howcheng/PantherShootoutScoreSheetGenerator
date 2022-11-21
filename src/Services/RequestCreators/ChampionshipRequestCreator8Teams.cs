@@ -1,11 +1,12 @@
 ﻿using GoogleSheetsHelper;
+using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class ChampionshipRequestCreator8Teams : StandardChampionshipRequestCreator
 	{
-		public ChampionshipRequestCreator8Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper) 
-			: base(config, helper)
+		public ChampionshipRequestCreator8Teams(DivisionSheetConfig config, FormulaGenerator formGen) 
+			: base(config, formGen)
 		{
 		}
 
@@ -31,11 +32,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			startRowIndex += 1;
 
 			// championship and consolation headers and teams
-			updateRequests.AddRange(CreateChampionshipHeaderAndTeamRows(info, 2, startRowIndex, startRowNum, $"3RD-PLACE: 2nd from Pool {pool1} vs 2nd from Pool {pool2}"));
+			updateRequests.AddRange(CreateChampionshipHeaderAndTeamRows(info, 2, startRowIndex, $"3RD-PLACE: 2nd from Pool {pool1} vs 2nd from Pool {pool2}"));
 			startRowIndex += 2;
 			startRowNum += 2;
 			ret.ThirdPlaceGameRowNum = startRowNum;
-			updateRequests.AddRange(CreateChampionshipHeaderAndTeamRows(info, 1, startRowIndex, startRowNum, $"CHAMPIONSHIP: 1st from Pool {pool1} vs 1st from Pool {pool2}"));
+			updateRequests.AddRange(CreateChampionshipHeaderAndTeamRows(info, 1, startRowIndex, $"CHAMPIONSHIP: 1st from Pool {pool1} vs 1st from Pool {pool2}"));
 			//startRowIndex += 2;
 			startRowNum += 2;
 			ret.ChampionshipGameRowNum = startRowNum;

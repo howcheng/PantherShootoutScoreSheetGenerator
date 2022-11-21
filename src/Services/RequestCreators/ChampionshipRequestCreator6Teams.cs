@@ -1,12 +1,16 @@
 ﻿using GoogleSheetsHelper;
+using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class ChampionshipRequestCreator6Teams : StandardChampionshipRequestCreator
 	{
-		public ChampionshipRequestCreator6Teams(DivisionSheetConfig config, PsoDivisionSheetHelper _helper)
-			: base(config, _helper)
+		private readonly PsoFormulaGenerator _formGen;
+
+		public ChampionshipRequestCreator6Teams(DivisionSheetConfig config, FormulaGenerator formGen)
+			: base(config, formGen)
 		{
+			_formGen = (PsoFormulaGenerator)formGen;
 		}
 
 		/// <summary>
@@ -90,16 +94,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			awayFormula = CreateSemifinalFormula(firstSemi ? 2 : 1, pool2StartRow, pool2EndRow);
 		}
 
-		private string CreateSemifinalFormula(int rank, int standingsStartRowNum, int standingsEndRowNum)
-		{
-			// =IF(COUNTIF(F3:F5,"=2")=3, VLOOKUP([rank],{M3:M5,E3:E5},2,FALSE), "")
-			// if all 3 teams in the pool have played 2 games each, the name of the team with the given rank, otherwise blank
-			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, standingsStartRowNum, standingsEndRowNum);
-			string rankCellRange = Utilities.CreateCellRangeString(_helper.RankColumnName, standingsStartRowNum, standingsEndRowNum);
-			string teamNameCellRange = Utilities.CreateCellRangeString(_helper.TeamNameColumnName, standingsStartRowNum, standingsEndRowNum);
-			string formula = $"=IF(COUNTIF({gamesPlayedCellRange},\"=2\")={_config.TeamsPerPool}, VLOOKUP({rank},{{{rankCellRange},{teamNameCellRange}}},2,FALSE), \"\")";
-			return formula;
-		}
+		private string CreateSemifinalFormula(int rank, int standingsStartRowNum, int standingsEndRowNum) 
+			=> _formGen.GetTeamNameFromStandingsTableByRankFormula(rank, _config.TotalPoolPlayGames, standingsStartRowNum, standingsEndRowNum);
 
 		private void CreateFinalFormulas(int semi1RowNum, int semi2RowNum, bool isChampionship, out string homeFormula, out string awayFormula)
 		{

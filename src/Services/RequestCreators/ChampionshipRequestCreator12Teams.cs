@@ -5,9 +5,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class ChampionshipRequestCreator12Teams : ChampionshipRequestCreator
 	{
-		public ChampionshipRequestCreator12Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
-			: base(config, helper)
+		private readonly PsoFormulaGenerator _formGen;
+
+		public ChampionshipRequestCreator12Teams(DivisionSheetConfig config, FormulaGenerator formGen)
+			: base(config, (PsoDivisionSheetHelper)formGen.SheetHelper)
 		{
+			_formGen = (PsoFormulaGenerator)formGen;
 		}
 
 		/// <summary>
@@ -61,15 +64,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			PoolPlayInfo12Teams info = (PoolPlayInfo12Teams)inf;
 			int poolWinnersStartRowNum = rank <= 3 ? info.PoolWinnersStartAndEndRowNums.First().Item1 : info.PoolWinnersStartAndEndRowNums.Last().Item1;
 			int poolWinnersEndRowNum = rank <= 3 ? info.PoolWinnersStartAndEndRowNums.First().Item2 : info.PoolWinnersStartAndEndRowNums.Last().Item2;
-			// =IF(COUNTIF(W3:W5,3)=3, VLOOKUP([rank],{V3:V5,T3:T5},2,FALSE), "")
-			// if not all games played yet do nothing
-			// otherwise get the name of the team with rank N from the pool-winners or runners-up ranges
-			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED), poolWinnersStartRowNum, poolWinnersEndRowNum);
-			string rankCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK), poolWinnersStartRowNum, poolWinnersEndRowNum);
-			string teamNameCellRange = Utilities.CreateCellRangeString(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNERS), poolWinnersStartRowNum, poolWinnersEndRowNum);
 
 			int rankForVlookup = rank <= 3 ? rank : 1; // rank 4 = top 2nd-place team
-			return $"=IF(COUNTIF({gamesPlayedCellRange}, 3)=3, VLOOKUP({rankForVlookup},{{{rankCellRange},{teamNameCellRange}}},2,FALSE), \"\")";
+			return _formGen.GetTeamNameFromPoolWinnersByRankFormula(rankForVlookup, _config.TotalPoolPlayGames, poolWinnersStartRowNum, poolWinnersEndRowNum);
 		}
 	}
 }

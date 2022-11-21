@@ -13,11 +13,49 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 
 		/// <summary>
+		/// Gets the formula for determining the team in the standings table with a given rank
+		/// </summary>
+		/// <param name="rank"></param>
+		/// <param name="gameCount"></param>
+		/// <param name="standingsStartRowNum"></param>
+		/// <param name="standingsEndRowNum"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// =IF(COUNTIF(F3:F6,"=3")=4, VLOOKUP(1,{M3:M6,E3:E6},2,FALSE), "")
+		/// if not all games played yet do nothing
+		/// otherwise get the name of the team with rank 1
+		/// </remarks>
+		public string GetTeamNameFromStandingsTableByRankFormula(int rank, int gameCount, int standingsStartRowNum, int standingsEndRowNum)
+			=> GetTeamNameByRankFormula(rank, gameCount, standingsStartRowNum, standingsEndRowNum, _helper.GamesPlayedColumnName, _helper.RankColumnName, _helper.TeamNameColumnName);
+
+		/// <summary>
+		/// Gets the formula for determining the team in the pool winners section with a given rank
+		/// </summary>
+		/// <param name="rank"></param>
+		/// <param name="gameCount"></param>
+		/// <param name="standingsStartRowNum"></param>
+		/// <param name="standingsEndRowNum"></param>
+		/// <returns></returns>
+		public string GetTeamNameFromPoolWinnersByRankFormula(int rank, int gameCount, int standingsStartRowNum, int standingsEndRowNum)
+			=> GetTeamNameByRankFormula(rank, gameCount, standingsStartRowNum, standingsEndRowNum, _helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED)
+				, _helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK), _helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNERS));
+
+		private string GetTeamNameByRankFormula(int rank, int gameCount, int standingsStartRowNum, int standingsEndRowNum, string gamesPlayedColName, string rankColName, string teamNameColName)
+		{
+			int teamCount = standingsEndRowNum - standingsStartRowNum + 1;
+			string gamesPlayedCellRange = Utilities.CreateCellRangeString(gamesPlayedColName, standingsStartRowNum, standingsEndRowNum);
+			string rankCellRange = Utilities.CreateCellRangeString(rankColName, standingsStartRowNum, standingsEndRowNum);
+			string teamNameCellRange = Utilities.CreateCellRangeString(teamNameColName, standingsStartRowNum, standingsEndRowNum);
+
+			return $"=IF(COUNTIF({gamesPlayedCellRange}, {gameCount})={teamCount}, VLOOKUP({rank},{{{rankCellRange},{teamNameCellRange}}},2,FALSE), \"\")";
+		}
+
+		/// <summary>
 		/// Gets the formula for calculating the game points for the home team
 		/// </summary>
 		/// <param name="startRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=IFS(OR(ISBLANK(A3),P3=""),0,P3="H",6,P3="D",3,P3="A",0)+IFS(B3="",0,B3<=3,B3,B3>3,3)+IFS(C3="",0,E3=TRUE,0,,C3=0,1,C3>0,0)
+		/// <remarks> =IFS(OR(ISBLANK(A3),P3=""),0,P3="H",6,P3="D",3,P3="A",0)+IFS(B3="",0,B3<=3,B3,B3>3,3)+IFS(C3="",0,E3=TRUE,0,,C3=0,1,C3>0,0)
 		/// if team not entered yet, 0; if winner pending, 0; if home wins, 6 pts; if draw, 3 pts; if loss, 0 (can't use ISBLANK for winner cell because there's a formula there)
 		/// + if home goals not entered yet, 0; if <=3 home goals, +home goals; if >3 home goals, +3
 		/// + if away goals not entered yet, 0; if forfeit box is checked, 0; if 0 away goals, +1; anything else, 0
@@ -29,7 +67,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// </summary>
 		/// <param name="startRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=IFS(OR(ISBLANK(A3),P3=""),0,P3="A",6,P3="D",3,P3="H",0)+IFS(B3="",0,B3<=3,B3,B3>3,3)+IFS(C3="",0,E3=TRUE,0,C3=0,1,C3>0,0)
+		/// <remarks> =IFS(OR(ISBLANK(A3),P3=""),0,P3="A",6,P3="D",3,P3="H",0)+IFS(B3="",0,B3<=3,B3,B3>3,3)+IFS(C3="",0,E3=TRUE,0,C3=0,1,C3>0,0)
 		/// if team not entered yet, 0; if winner pending, 0; if away wins, 6 pts; if draw, 3 pts; if loss, 0 (can't use ISBLANK for winner cell because there's a formula there)
 		/// + if away goals not entered yet, 0; if <=3 away goals, +away goals; if >3 away goals, +3
 		/// + if home goals not entered yet, 0; if forfeit box is checked, 0; if 0 home goals, +1; anything else, 0
@@ -138,7 +176,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
+		/// <remarks> =IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
 		/// = if (calculated rank >= 3 or no ties), then use the calculated rank
 		/// otherwise if the tiebreaker checkbox is NOT checked, then add 1 to the calculated rank (that way, 1 becomes 2)
 		/// otherwise use the calculated rank
@@ -153,7 +191,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
+		/// <remarks> =IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
 		/// = if (calculated rank >= 3 or no ties), then use the calculated rank
 		/// otherwise if the tiebreaker checkbox is NOT checked, then add 1 to the calculated rank (that way, 1 becomes 2)
 		/// otherwise use the calculated rank
@@ -176,7 +214,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=IFNA(IFS(COUNTIF(AB$3:AB$5, AB3) = 1, AB3, NOT(AF3), AB3+1, AF3, AB3), "")
+		/// <remarks> =IFNA(IFS(COUNTIF(AB$3:AB$5, AB3) = 1, AB3, NOT(AF3), AB3+1, AF3, AB3), "")
 		/// = if no ties, then use the calculated rank
 		/// otherwise if the tiebreaker checkbox is NOT checked, then add 1 to the calculated rank (that way, 1 becomes 2)
 		/// otherwise use the calculated rank
@@ -203,7 +241,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="standingsEndRowNum"></param>
 		/// <param name="rank"></param>
 		/// <returns></returns>
-		/// <remarks>=IF(W3=3, VLOOKUP(1,{M3:M6,E3:E6},2,FALSE), "")
+		/// <remarks> =IF(W3=3, VLOOKUP(1,{M3:M6,E3:E6},2,FALSE), "")
 		/// = if # of games played = 3, get the team name from the standings table where rank = 1 (or 2), else blank
 		/// </remarks>
 		public string GetPoolWinnersTeamNameFormula(int startRowNum, int standingsStartRowNum, int standingsEndRowNum, int rank)
@@ -222,7 +260,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="standingsEndRowNum"></param>
 		/// <param name="rank"></param>
 		/// <returns></returns>
-		/// <remarks>=IF(W3=3, VLOOKUP(1,{M3:M6,L3:L6},2,FALSE), "")
+		/// <remarks> =IF(W3=3, VLOOKUP(1,{M3:M6,L3:L6},2,FALSE), "")
 		/// = if # of games played = 3, get the value of the points column from the standings table where rank = 1 (or 2), else blank
 		/// </remarks>
 		public string GetPoolWinnersGamePointsFormula(int startRowNum, int standingsStartRowNum, int standingsEndRowNum, int rank)
@@ -239,7 +277,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="standingsStartRowNum"></param>
 		/// <param name="standingsEndRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=IF(COUNTIF(F3:F6,3)=4, VLOOKUP(1,{M3:M6,F3:F6},2,FALSE), "")
+		/// <remarks> =IF(COUNTIF(F3:F6,3)=4, VLOOKUP(1,{M3:M6,F3:F6},2,FALSE), "")
 		/// = if all teams in pool have played 3 games, get the value of the games played column from the standings table where rank = 1 (or 2), else blank
 		/// </remarks>
 		public string GetPoolWinnersGamesPlayedFormula(int standingsStartRowNum, int standingsEndRowNum)
@@ -273,7 +311,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="gameRowNum">Row number of the championship or consolation game</param>
 		/// <param name="startRowNum">Start row number of the standings table</param>
 		/// <returns></returns>
-		/// <remarks>=OR(AND($A$30=$E3, $B$30>$C$30), AND($D$30=$E3, $B$30<$C$30)) -- game winner
+		/// <remarks> =OR(AND($A$30=$E3, $B$30>$C$30), AND($D$30=$E3, $B$30<$C$30)) -- game winner
 		/// = true if the team is the home team in the final game and the home score is greater than the away score, or vice versa
 		/// for game losers, flip the comparion operators
 		/// </remarks>
@@ -302,7 +340,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="standingsStartAndEndRowNums"></param>
 		/// <param name="startRowNum"></param>
 		/// <returns></returns>
-		/// <remarks>=AND($M3=1,COUNTIF($N$3:$N$7,"=4")=5,COUNTIF($N$24:$N$28,"=4")=5)
+		/// <remarks> =AND($M3=1,COUNTIF($N$3:$N$7,"=4")=5,COUNTIF($N$24:$N$28,"=4")=5)
 		/// = true when value of rank cell == <paramref name="rank"/>, and all teams have played 5 games
 		/// </remarks>
 		public string GetConditionalFormattingForWinnerFormula10Teams(int rank, List<Tuple<int, int>> standingsStartAndEndRowNums, int startRowNum)
@@ -318,7 +356,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
 		/// </summary>
 		/// <returns></returns>
-		/// <remarks>=RANK(L3, {L$3:L$7,L$24:L$28})</remarks>
+		/// <remarks> =RANK(L3, {L$3:L$7,L$24:L$28})</remarks>
 		public string GetOverallRankFormula(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
 		{
 			string columnName = _helper.GetColumnNameByHeader(Constants.HDR_GAME_PTS);

@@ -10,7 +10,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(6);
 			config.DivisionName = ShootoutConstants.DIV_10UB;
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			ChampionshipRequestCreator6Teams creator = new ChampionshipRequestCreator6Teams(config, helper);
+			ChampionshipRequestCreator6Teams creator = new ChampionshipRequestCreator6Teams(config, new PsoFormulaGenerator(helper));
 
 			List<Team> teams = CreateTeams(config);
 			PoolPlayInfo info = new PoolPlayInfo(teams) 
@@ -55,7 +55,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		private string GetFirstRoundFormula(int rank, Tuple<int, int> startAndEndRowNums)
-			=> string.Format("=IF(COUNTIF(G{1}:G{2},\"=2\")=3, VLOOKUP({0},{{N{1}:N{2},F{1}:F{2}}},2,FALSE), \"\")", rank, startAndEndRowNums.Item1, startAndEndRowNums.Item2);
+			=> string.Format("=IF(COUNTIF(G{1}:G{2}, 2)=3, VLOOKUP({0},{{N{1}:N{2},F{1}:F{2}}},2,FALSE), \"\")", rank, startAndEndRowNums.Item1, startAndEndRowNums.Item2);
 
 		private string GetFinalFormula(int rowNum, bool isFinal)
 		{

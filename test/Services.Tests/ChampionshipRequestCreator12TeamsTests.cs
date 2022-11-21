@@ -10,7 +10,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(12);
 			config.DivisionName = ShootoutConstants.DIV_10UB;
 			PsoDivisionSheetHelper12Teams helper = new PsoDivisionSheetHelper12Teams(config);
-			ChampionshipRequestCreator12Teams creator = new ChampionshipRequestCreator12Teams(config, helper);
+			ChampionshipRequestCreator12Teams creator = new ChampionshipRequestCreator12Teams(config, new PsoFormulaGenerator(helper));
 
 			List<Team> teams = CreateTeams(config);
 			PoolPlayInfo12Teams info = new PoolPlayInfo12Teams(teams) 
