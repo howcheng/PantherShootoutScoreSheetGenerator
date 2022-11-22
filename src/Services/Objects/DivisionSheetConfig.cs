@@ -8,6 +8,7 @@
 		public int TeamsPerPool { get; set; }
 		public int NumberOfPools => NumberOfTeams / TeamsPerPool;
 		public int GamesPerRound { get; set; }
+		public int TotalPoolPlayGames => TeamsPerPool - 1;
 		public int NumberOfRounds { get; set; }
 		public int TeamNameCellWidth { get; set; }
 
@@ -21,22 +22,25 @@
 					GamesPerRound = 1;
 					TeamsPerPool = 3;
 					break;
-				case 8:
-					NumberOfRounds = 3;
-					GamesPerRound = 2;
-					TeamsPerPool = 4;
-					break;
 				case 10:
 					NumberOfRounds = 5;
 					GamesPerRound = 2;
 					TeamsPerPool = 5;
 					break;
-				default: // 12 teams
+				default: // 4, 8, or 12 teams
 					NumberOfRounds = 3;
 					GamesPerRound = 2;
 					TeamsPerPool = 4;
 					break;
 			}
+		}
+	}
+
+	public class DivisionSheetConfig4Teams : DivisionSheetConfig
+	{
+		public DivisionSheetConfig4Teams()
+		{
+			SetupForTeams(4);
 		}
 	}
 
@@ -78,6 +82,8 @@
 		{
 			switch (numTeams)
 			{
+				case 4:
+					return new DivisionSheetConfig4Teams();
 				case 6:
 					return new DivisionSheetConfig6Teams();
 				case 8:

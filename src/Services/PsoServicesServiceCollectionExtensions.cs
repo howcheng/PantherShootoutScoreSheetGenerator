@@ -41,6 +41,9 @@ namespace Microsoft.Extensions.DependencyInjection
 			int numTeams = divisionTeams.Count();
 			switch (numTeams)
 			{
+				case 4:
+					championshipCreatorType = typeof(ChampionshipRequestCreator4Teams);
+					break;
 				case 6:
 					championshipCreatorType = typeof(ChampionshipRequestCreator6Teams);
 					break;
