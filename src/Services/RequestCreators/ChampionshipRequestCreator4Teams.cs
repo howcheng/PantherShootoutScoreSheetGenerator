@@ -38,14 +38,17 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			UpdateRequest consolationRequest = CreateChampionshipTeamRow(info, 3, 4, startRowIndex);
 			updateRequests.Add(consolationRequest);
 			startRowIndex += 1;
+			ret.ThirdPlaceGameRowNum = startRowIndex;
 
 			// championship: top two teams
-			UpdateRequest subheaderRequest2 = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.HeaderRowColumns.Count - 1, "CHAMPIONSHIP: 1st place vs 2nd place", 0, cell => cell.SetHeaderCellFormatting());
+			UpdateRequest subheaderRequest2 = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.HeaderRowColumns.Count - 1, "CHAMPIONSHIP: 1st place vs 2nd place", 0, cell => cell.SetSubheaderCellFormatting());
 			updateRequests.Add(subheaderRequest2);
 			startRowIndex += 1;
 
 			UpdateRequest championshipRequest = CreateChampionshipTeamRow(info, 1, 2, startRowIndex);
 			updateRequests.Add(championshipRequest);
+			ret.ChampionshipGameRowNum = startRowIndex + 1;
+
 			ret.UpdateValuesRequests = updateRequests;
 			return ret;
 		}

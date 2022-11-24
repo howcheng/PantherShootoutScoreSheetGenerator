@@ -1,4 +1,5 @@
-﻿using GoogleSheetsHelper;
+﻿using System.Text;
+using GoogleSheetsHelper;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
@@ -334,22 +335,27 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 
 		/// <summary>
-		/// Gets the formula to set up the conditional formatting to highlight the winners in the standings tables in a 10-team division
+		/// Gets the formula to set up the conditional formatting to highlight the winners in the standings tables in a 5- or 10-team division
 		/// </summary>
 		/// <param name="rank"></param>
 		/// <param name="standingsStartAndEndRowNums"></param>
 		/// <param name="startRowNum"></param>
 		/// <returns></returns>
-		/// <remarks> =AND($M3=1,COUNTIF($N$3:$N$7,"=4")=5,COUNTIF($N$24:$N$28,"=4")=5)
+		/// <remarks> =AND($M3=1,COUNTIF($N$3:$N$7,"=4")=5,COUNTIF($N$24:$N$28,"=4")=5) (this is for a 10-team division)
 		/// = true when value of rank cell == <paramref name="rank"/>, and all teams have played 5 games
 		/// </remarks>
-		public string GetConditionalFormattingForWinnerFormula10Teams(int rank, List<Tuple<int, int>> standingsStartAndEndRowNums, int startRowNum)
+		public string GetConditionalFormattingForWinnerFormula5Teams(int rank, List<Tuple<int, int>> standingsStartAndEndRowNums, int startRowNum)
 		{
 			string rankCell = $"${_helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK)}{startRowNum}";
 			Func<Tuple<int, int>, string> getRange = pair => Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, pair.Item1, pair.Item2, CellRangeOptions.FixColumn | CellRangeOptions.FixRow);
-			string pool1Range = getRange(standingsStartAndEndRowNums.First());
-			string pool2Range = getRange(standingsStartAndEndRowNums.Last());
-			return $"=AND({rankCell}={rank},COUNTIF({pool1Range},\"=4\")=5,COUNTIF({pool2Range},\"=4\")=5)";
+			StringBuilder sb = new StringBuilder($"=AND({rankCell}={rank}");
+			foreach (Tuple<int, int> startAndEnd in standingsStartAndEndRowNums)
+			{
+				string range = getRange(startAndEnd);
+				sb.AppendLine($",COUNTIF({range}, 4)=5");
+			}
+			sb.Append(')');
+			return sb.ToString();
 		}
 
 		/// <summary>

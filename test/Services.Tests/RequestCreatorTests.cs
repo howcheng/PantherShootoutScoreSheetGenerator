@@ -75,15 +75,13 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		[Theory]
-		[InlineData(10)] // 10-team division
-		[InlineData(8)] // good for every other division
+		[InlineData(10)] // good for 5-and 10-team divisions
+		[InlineData(8)] // good for all other divisions
 		public void CanCreateStandingsRequests(int numTeams)
 		{
-			// this test is for all divisions except the 10-team one, which follows this
-
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			List<Team> teams = CreateTeams(config);
-			PsoDivisionSheetHelper helper = numTeams == 8 ? new PsoDivisionSheetHelper(config) : new PsoDivisionSheetHelper10Teams(config);
+			PsoDivisionSheetHelper helper = numTeams == 10 ? new PsoDivisionSheetHelper10Teams(config) : new PsoDivisionSheetHelper(config);
 			StandingsTableRequestCreator creator = new StandingsTableRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams, config));
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
@@ -115,7 +113,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			// confirm the columns and game ranges for the head-to-head tiebreakers
 			IEnumerable<Request> headToHeadRequests = info.UpdateSheetRequests.Where(x => x.RepeatCell != null && x.RepeatCell.Range.StartColumnIndex > helper.GetColumnIndexByHeader(Constants.HDR_GOAL_DIFF));
 			Assert.Equal(config.TeamsPerPool, headToHeadRequests.Count());
-			int lastGameRowNum = numTeams == 8 ? 12 : 20;
+			int lastGameRowNum = (numTeams % 5) == 0 ? 20 : 12;
 			string expectedCellRange = Utilities.CreateCellRangeString("A", 3, lastGameRowNum, CellRangeOptions.FixRow);
 			Assert.All(headToHeadRequests, rq => Assert.Contains(expectedCellRange, rq.RepeatCell.Cell.UserEnteredValue.FormulaValue));
 
@@ -255,7 +253,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		[Fact]
-		public void PoolPlayCreatorCanSetChampionshipStartRowIndexCorrectly()
+		public void PoolPlayCreatorCanSetChampionshipStartRowIndex()
 		{
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
 			List<Team> teams = CreateTeams(config);
@@ -266,6 +264,24 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			info = creator.CreatePoolPlayRequests(info);
 
 			Assert.Equal(26, info.ChampionshipStartRowIndex); // this number comes from the 2021 score sheet for 10U Boys, as that was an 8-team division
+		}
+
+		[Theory]
+		[InlineData(8)]
+		[InlineData(6)]
+		[InlineData(5)]
+		[InlineData(4)]
+		public void PoolPlayCreatorCanSetStandingsStartAndEndRows(int numTeams)
+		{
+			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(numTeams);
+			List<Team> teams = CreateTeams(config);
+			PoolPlayInfo info = new PoolPlayInfo(teams);
+			var creators = CreateMocksForPoolPlayRequestCreatorTests(config);
+
+			PoolPlayRequestCreator creator = new PoolPlayRequestCreator(config, creators.Item1, creators.Item2, creators.Item3);
+			info = creator.CreatePoolPlayRequests(info);
+
+			Assert.Equal(numTeams <= 5 ? 1 : 2, info.StandingsStartAndEndRowNums.Count);
 		}
 	}
 }

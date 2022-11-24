@@ -1,8 +1,8 @@
 ﻿namespace PantherShootoutScoreSheetGenerator.Services
 {
-	public class ChampionshipRequestCreator10Teams : ChampionshipRequestCreator
+	public class ChampionshipRequestCreator5Teams : ChampionshipRequestCreator
 	{
-		public ChampionshipRequestCreator10Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+		public ChampionshipRequestCreator5Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
 			: base(config, helper)
 		{
 		}

@@ -50,8 +50,9 @@ namespace Microsoft.Extensions.DependencyInjection
 				case 8:
 					championshipCreatorType = typeof(ChampionshipRequestCreator8Teams);
 					break;
+				case 5:
 				case 10:
-					championshipCreatorType = typeof(ChampionshipRequestCreator10Teams);
+					championshipCreatorType = typeof(ChampionshipRequestCreator5Teams);
 					break;
 				default: // 12 teams
 					championshipCreatorType = typeof(ChampionshipRequestCreator12Teams);
@@ -94,8 +95,9 @@ namespace Microsoft.Extensions.DependencyInjection
 			Type winnerFormatCreatorType;
 			switch (numTeams)
 			{
+				case 5:
 				case 10:
-					winnerFormatCreatorType = typeof(WinnerFormattingRequestsCreator10Teams);
+					winnerFormatCreatorType = typeof(WinnerFormattingRequestsCreator5Teams);
 					break;
 				default:
 					winnerFormatCreatorType = typeof(WinnerFormattingRequestsCreator);

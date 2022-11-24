@@ -14,7 +14,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
 			List<Team> teams = CreateTeams(config);
 			PsoDivisionSheetHelper10Teams helper = new PsoDivisionSheetHelper10Teams(config);
-			WinnerFormattingRequestsCreator creator = new WinnerFormattingRequestsCreator10Teams(config, new PsoFormulaGenerator(helper));
+			WinnerFormattingRequestsCreator creator = new WinnerFormattingRequestsCreator5Teams(config, new PsoFormulaGenerator(helper));
 
 			Fixture fixture = new Fixture();
 			fixture.Customize<PoolPlayInfo>(c => c.FromFactory(() => new PoolPlayInfo(teams))); // https://stackoverflow.com/questions/26149618/autofixture-customizations-provide-constructor-parameter

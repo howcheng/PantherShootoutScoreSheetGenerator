@@ -22,6 +22,7 @@
 					GamesPerRound = 1;
 					TeamsPerPool = 3;
 					break;
+				case 5:
 				case 10:
 					NumberOfRounds = 5;
 					GamesPerRound = 2;
@@ -60,11 +61,11 @@
 		}
 	}
 
-	public class DivisionSheetConfig10Teams : DivisionSheetConfig
+	public class DivisionSheetConfig5Teams : DivisionSheetConfig
 	{
-		public DivisionSheetConfig10Teams()
+		public DivisionSheetConfig5Teams()
 		{
-			SetupForTeams(10);
+			SetupForTeams(5);
 		}
 	}
 
@@ -88,8 +89,9 @@
 					return new DivisionSheetConfig6Teams();
 				case 8:
 					return new DivisionSheetConfig8Teams();
+				case 5:
 				case 10:
-					return new DivisionSheetConfig10Teams();
+					return new DivisionSheetConfig5Teams();
 				default:
 					return new DivisionSheetConfig12Teams();
 			}
