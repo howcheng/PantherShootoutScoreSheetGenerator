@@ -31,52 +31,50 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			// finals label row
 			UpdateRequest labelRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.StandingsTableColumns.Count - 1, "FINALS", 4, cell => cell.SetHeaderCellFormatting());
 			updateRequests.Add(labelRequest);
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the subheader label for the consolation game
 
 			// consolation: 3rd place teams from each pool
 			UpdateRequest subheaderRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.HeaderRowColumns.Count - 1, $"CONSOLATION: 3rd from Pool {pool1} vs 3rd from Pool {pool2}", 0, cell => cell.SetSubheaderCellFormatting());
 			updateRequests.Add(subheaderRequest);
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the scores row for the consolation game
 			string homeFormula, awayFormula;
 			homeFormula = CreateSemifinalFormula(3, info.StandingsStartAndEndRowNums.First().Item1, info.StandingsStartAndEndRowNums.First().Item2);
 			awayFormula = CreateSemifinalFormula(3, info.StandingsStartAndEndRowNums.Last().Item1, info.StandingsStartAndEndRowNums.Last().Item2);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the subheader label for the semifinals
 
 			// semifinals: 1st place from pool 1 vs 2nd place from pool 2 (and vice versa)
 			updateRequests.Add(CreateChampionshipHeaderRow(startRowIndex, "SEMIFINALS: 1st place in each pool vs 2nd place from the other pool"));
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the 1st scores row for the semifinals
 			int startRowNum = startRowIndex + 1;
 			int semi1RowNum = startRowNum;
 
 			CreateSemifinalFormulas(info, true, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the 2nd scores row for the semifinals
 			int semi2RowNum = startRowNum += 1;
 
 			CreateSemifinalFormulas(info, false, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the subheader label for the 3rd-place game
 			startRowNum += 1;
 
 			// 3rd-place game
 			updateRequests.Add(CreateChampionshipHeaderRow(startRowIndex, "3RD-PLACE GAME"));
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the scores row for the 3rd-place gmae
 			startRowNum += 1;
 			CreateFinalFormulas(semi1RowNum, semi2RowNum, false, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
-			startRowIndex += 1;
-			startRowNum += 1;
 			ret.ThirdPlaceGameRowNum = startRowNum;
+			startRowIndex += 1; // this is now the subheader label for the championship
+			startRowNum += 1;
 
 			// final
 			updateRequests.Add(CreateChampionshipHeaderRow(startRowIndex, "FINAL"));
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the scores row for the championship
 			startRowNum += 1;
 			CreateFinalFormulas(semi1RowNum, semi2RowNum, true, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
-			//startRowIndex += 1;
-			startRowNum += 1;
 			ret.ChampionshipGameRowNum = startRowNum;
 
 			ret.UpdateValuesRequests = updateRequests;
