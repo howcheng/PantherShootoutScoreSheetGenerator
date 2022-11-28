@@ -26,6 +26,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					sb.Append('+');
 				startGamesRowNum += config.GamesPerRound + 2; // +2 to account for the blank space and round header
 			}
+
+			// -1 pt for yellow cards, -2 pts for red cards
+			string ycCol = helper.GetColumnNameByHeader(Constants.HDR_YELLOW_CARDS);
+			string rcCol = helper.GetColumnNameByHeader(Constants.HDR_RED_CARDS);
+			sb.AppendFormat("-{1}{0}-2*{2}{0}", config.StartGamesRowNum, ycCol, rcCol);
 			return sb.ToString();
 		}
 	}
