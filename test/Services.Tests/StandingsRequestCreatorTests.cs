@@ -207,7 +207,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public void TestOverallRankRequestCreator()
 		{
 			IEnumerable<Tuple<int, int>> startAndEnd = _fixture.CreateMany<Tuple<int, int>>(2);
-			OverallRankRequestCreatorConfig config = _fixture.Build<OverallRankRequestCreatorConfig>()
+			RankRequestCreatorConfig10Teams config = _fixture.Build<RankRequestCreatorConfig10Teams>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.With(x => x.StandingsStartAndEndRowNums, startAndEnd)
 				.Create();

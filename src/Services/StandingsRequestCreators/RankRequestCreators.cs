@@ -62,7 +62,23 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 	}
 
-	public class OverallRankRequestCreator : StandingsRequestCreator
+	public class StandingsRankWithTiebreakerRequestCreator10Teams : RankRequestCreator
+	{
+		public StandingsRankWithTiebreakerRequestCreator10Teams(FormulaGenerator formGen)
+			: base(formGen, Constants.HDR_RANK)
+		{
+		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
+		{
+			RankRequestCreatorConfig10Teams config = (RankRequestCreatorConfig10Teams)cfg;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula10Teams(config.StartGamesRowNum, config.StandingsStartAndEndRowNums);
+		}
+
+		public override bool IsApplicableToColumn(string columnHeader) => false; // execution of this guy has to be deferred until after the standings tables are created
+	}
+
+	public class OverallRankRequestCreator : RankRequestCreator//StandingsRequestCreator
 	{
 		public OverallRankRequestCreator(FormulaGenerator formGen) 
 			: base(formGen, ShootoutConstants.HDR_OVERALL_RANK)
@@ -71,7 +87,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
 		{
-			OverallRankRequestCreatorConfig config = (OverallRankRequestCreatorConfig)cfg;
+			RankRequestCreatorConfig10Teams config = (RankRequestCreatorConfig10Teams)cfg;
 			return ((PsoFormulaGenerator)_formulaGenerator).GetOverallRankFormula(config.StartGamesRowNum, config.StandingsStartAndEndRowNums);
 		}
 

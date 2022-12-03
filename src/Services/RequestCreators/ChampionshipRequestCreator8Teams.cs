@@ -29,15 +29,15 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			// finals label row
 			UpdateRequest headerRequest = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()), "FINALS", 4, cell => cell.SetHeaderCellFormatting());
 			updateRequests.Add(headerRequest);
-			startRowIndex += 1;
+			startRowIndex += 1; // this is now the subheader label row for the 3rd-place game
+			startRowNum += 1;
 
 			// championship and consolation headers and teams
 			updateRequests.AddRange(CreateChampionshipHeaderAndTeamRows(info, 2, startRowIndex, $"3RD-PLACE: 2nd from Pool {pool1} vs 2nd from Pool {pool2}"));
-			startRowIndex += 2;
-			startRowNum += 2;
+			startRowIndex += 2; // this is now the subheader label row for the championship
+			startRowNum +=  1;
 			ret.ThirdPlaceGameRowNum = startRowNum;
 			updateRequests.AddRange(CreateChampionshipHeaderAndTeamRows(info, 1, startRowIndex, $"CHAMPIONSHIP: 1st from Pool {pool1} vs 1st from Pool {pool2}"));
-			//startRowIndex += 2;
 			startRowNum += 2;
 			ret.ChampionshipGameRowNum = startRowNum;
 

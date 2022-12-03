@@ -200,7 +200,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public string GetRankWithTiebreakerFormula(string calcRankColumnName, int startRowNum, int endRowNum)
 		{
 			string cellRange = Utilities.CreateCellRangeString(calcRankColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			string firstRankCell = $"{calcRankColumnName}{startRowNum}";
+			return GetRankWithTiebreakerFormula(calcRankColumnName, cellRange, startRowNum);
+		}
+
+		private string GetRankWithTiebreakerFormula(string columnName, string cellRange, int startRowNum)
+		{
+			string firstRankCell = Utilities.CreateCellReference(columnName, startRowNum);
 			string firstTiebreakerCell = $"{_helper.TiebreakerColumnName}{startRowNum}";
 			string formula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {0}, NOT({2}), {0}+1, {2}, {0})",
 				firstRankCell,
@@ -346,7 +351,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// </remarks>
 		public string GetConditionalFormattingForWinnerFormula5Teams(int rank, List<Tuple<int, int>> standingsStartAndEndRowNums, int startRowNum)
 		{
-			string rankCell = $"${_helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK)}{startRowNum}";
+			string rankCell = $"${_helper.GetColumnNameByHeader(Constants.HDR_RANK)}{startRowNum}";
 			Func<Tuple<int, int>, string> getRange = pair => Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, pair.Item1, pair.Item2, CellRangeOptions.FixColumn | CellRangeOptions.FixRow);
 			StringBuilder sb = new StringBuilder($"=AND({rankCell}={rank}");
 			foreach (Tuple<int, int> startAndEnd in standingsStartAndEndRowNums)
@@ -358,6 +363,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			return sb.ToString();
 		}
 
+		public string GetRankWithTiebreakerFormula10Teams(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
+		{
+			string columnName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK);
+			string cellRanges = string.Concat("{", GetCellRangesFor10TeamFormula(columnName, standingsStartAndEndRowNums), "}");
+			return GetRankWithTiebreakerFormula(columnName, cellRanges, rowNum);
+		}
+
 		/// <summary>
 		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
 		/// </summary>
@@ -366,9 +378,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public string GetOverallRankFormula(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
 		{
 			string columnName = _helper.GetColumnNameByHeader(Constants.HDR_GAME_PTS);
-			string cellRanges = standingsStartAndEndRowNums.Select(item => Utilities.CreateCellRangeString(columnName, item.Item1, item.Item2, CellRangeOptions.FixRow))
-				.Aggregate((s1, s2) => $"{s1},{s2}");
+			string cellRanges = GetCellRangesFor10TeamFormula(columnName, standingsStartAndEndRowNums);
 			return $"=RANK({columnName}{rowNum}, {{{cellRanges}}})";
 		}
+
+		private string GetCellRangesFor10TeamFormula(string columnName, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
+			=> standingsStartAndEndRowNums.Select(item => Utilities.CreateCellRangeString(columnName, item.Item1, item.Item2, CellRangeOptions.FixRow))
+				.Aggregate((s1, s2) => $"{s1},{s2}");
 	}
 }

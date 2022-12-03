@@ -12,7 +12,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected override Request CreateWinnerFormattingRequest(int rank, ChampionshipInfo championshipInfo)
 		{
-			string formula = _formulaGenerator.GetConditionalFormattingForWinnerFormula5Teams(rank, championshipInfo.StandingsStartAndEndRowNums, championshipInfo.FirstStandingsRowNum + 1);
+			string formula = _formulaGenerator.GetConditionalFormattingForWinnerFormula5Teams(rank, championshipInfo.StandingsStartAndEndRowNums, championshipInfo.FirstStandingsRowNum);
 			return CreateWinnerConditionalFormattingRequest(rank, formula, championshipInfo.StandingsStartAndEndIndices);
 		}
 	}

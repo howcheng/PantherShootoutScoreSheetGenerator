@@ -8,6 +8,8 @@ namespace Microsoft.Extensions.DependencyInjection
 	{
 		public static IServiceCollection AddPantherShootoutServices(this IServiceCollection services, IEnumerable<Team> divisionTeams, DivisionSheetConfig config)
 		{
+			int numTeams = divisionTeams.Count();
+
 			services.AddSingleton<IStandingsRequestCreatorFactory, StandingsRequestCreatorFactory>();
 
 			// request creators for score entry portion
@@ -19,9 +21,15 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesLostRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesDrawnRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, TotalPointsRequestCreator>();
-			services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator>();
+			if (numTeams == 10)
+			{
+				// 10-team divisions have a separate rank request creator
+				services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator10Teams>();
+				services.AddSingleton<IStandingsRequestCreator, OverallRankRequestCreator>();
+			}
+			else
+				services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator>(); 
 			services.AddSingleton<IStandingsRequestCreator, StandingsCalculatedRankRequestCreator>();
-			services.AddSingleton<IStandingsRequestCreator, OverallRankRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, StandingsTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsScoredRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstRequestCreator>();
@@ -38,7 +46,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
 			// figure out the correct types to register based on the number of teams
 			Type championshipCreatorType;
-			int numTeams = divisionTeams.Count();
 			switch (numTeams)
 			{
 				case 4:

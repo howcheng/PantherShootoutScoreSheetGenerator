@@ -8,7 +8,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public int GamesPerRound { get; set; }
 	}
 
-	public class OverallRankRequestCreatorConfig : StandingsRequestCreatorConfig
+	public class RankRequestCreatorConfig10Teams : StandingsRequestCreatorConfig
 	{
 		public IEnumerable<Tuple<int, int>> StandingsStartAndEndRowNums { get; set; } = Enumerable.Empty<Tuple<int, int>>();
 	}
