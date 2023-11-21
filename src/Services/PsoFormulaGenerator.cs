@@ -177,36 +177,39 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <returns></returns>
-		/// <remarks> =IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
-		/// = if (calculated rank >= 3 or no ties), then use the calculated rank
-		/// otherwise if the tiebreaker checkbox is NOT checked, then add 1 to the calculated rank (that way, 1 becomes 2)
-		/// otherwise use the calculated rank
+		/// <remarks> =MATCH(G3, AK$3:AK$12, 0)
+		/// = find the position of the team name within the final list sorted with tiebreakers applied
 		/// </remarks>
-		public string GetRankWithTiebreakerFormula(int startRowNum, int endRowNum)
-			=> GetRankWithTiebreakerFormula(_helper.CalculatedRankColumnName, startRowNum, endRowNum);
+		public string GetRankWithTiebreakerFormula10Teams(int startRowNum, int endRowNum)
+		{
+			string rankCell = Utilities.CreateCellReference(_helper.RankColumnName, startRowNum);
+			string cellRange = Utilities.CreateCellRangeString(Utilities.ConvertIndexToColumnName(_helper.SortedStandingsListColumnIndex), startRowNum, endRowNum, CellRangeOptions.FixRow);
+			return $"=MATCH({rankCell}, {cellRange}, 0)";
+		}
 
 		/// <summary>
 		/// Gets the formula for determining the rank in the standings table, taking into account the tiebreaker checkbox
 		/// </summary>
-		/// <param name="calcRankColumnName">Column name of the calculated rank column (for 10-team divisions, this will be "overall rank")</param>
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <returns></returns>
-		/// <remarks> =IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)
-		/// = if (calculated rank >= 3 or no ties), then use the calculated rank
-		/// otherwise if the tiebreaker checkbox is NOT checked, then add 1 to the calculated rank (that way, 1 becomes 2)
-		/// otherwise use the calculated rank
+		/// <remarks> =MATCH(G3, AK$3:AK$12, 0)
+		/// = find the team name from the sorted list of teams with tiebreakers applied
 		/// </remarks>
-		public string GetRankWithTiebreakerFormula(string calcRankColumnName, int startRowNum, int endRowNum)
+		public string GetRankWithTiebreakerFormula(int startRowNum, int endRowNum)
 		{
-			string cellRange = Utilities.CreateCellRangeString(calcRankColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			return GetRankWithTiebreakerFormula(calcRankColumnName, cellRange, startRowNum);
+			string cellRange = Utilities.CreateCellRangeString(Utilities.ConvertIndexToColumnName(_helper.SortedStandingsListColumnIndex), startRowNum, endRowNum, CellRangeOptions.FixRow);
+			string formula = string.Format("=MATCH({0}, {1}, 0)",
+				Utilities.CreateCellReference(_helper.TeamNameColumnName, startRowNum),
+				cellRange);
+			return formula;
 		}
 
 		private string GetRankWithTiebreakerFormula(string columnName, string cellRange, int startRowNum)
 		{
+			// =MATCH(G3, AK$3:AK$12, 0)
 			string firstRankCell = Utilities.CreateCellReference(columnName, startRowNum);
-			string firstTiebreakerCell = $"{_helper.TiebreakerColumnName}{startRowNum}";
+			string firstTiebreakerCell = $"{_helper.Head2HeadTiebreakerColumnName}{startRowNum}";
 			string formula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {0}, NOT({2}), {0}+1, {2}, {0})",
 				firstRankCell,
 				cellRange,
@@ -306,7 +309,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public string GetCalculatedRankFormula(int startRowNum, int endRowNum, int numTeams)
 		{
 			string rankFormula = GetTeamRankFormula(_helper.GamePointsColumnName, startRowNum, startRowNum, endRowNum);
-			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, startRowNum, startRowNum + numTeams - 1, CellRangeOptions.FixRow);
+			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
 			return $"=IF(COUNTIF({gamesPlayedCellRange}, \"0\")={numTeams}, \"\", {rankFormula})";
 		}
 
@@ -363,12 +366,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			return sb.ToString();
 		}
 
-		public string GetRankWithTiebreakerFormula10Teams(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
-		{
-			string columnName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK);
-			string cellRanges = string.Concat("{", GetCellRangesFor10TeamFormula(columnName, standingsStartAndEndRowNums), "}");
-			return GetRankWithTiebreakerFormula(columnName, cellRanges, rowNum);
-		}
+		//public string GetRankWithTiebreakerFormula10Teams(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
+		//{
+		//	string columnName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK);
+		//	string cellRanges = string.Concat("{", GetCellRange(columnName, standingsStartAndEndRowNums), "}");
+		//	return GetRankWithTiebreakerFormula(columnName, cellRanges, rowNum);
+		//}
 
 		/// <summary>
 		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
@@ -378,12 +381,146 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public string GetOverallRankFormula(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
 		{
 			string columnName = _helper.GetColumnNameByHeader(Constants.HDR_GAME_PTS);
-			string cellRanges = GetCellRangesFor10TeamFormula(columnName, standingsStartAndEndRowNums);
-			return $"=RANK({columnName}{rowNum}, {{{cellRanges}}})";
+			string cellRanges = GetCellRange(columnName, standingsStartAndEndRowNums);
+			return $"=RANK({columnName}{rowNum}, {cellRanges})";
 		}
 
-		private string GetCellRangesFor10TeamFormula(string columnName, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
-			=> standingsStartAndEndRowNums.Select(item => Utilities.CreateCellRangeString(columnName, item.Item1, item.Item2, CellRangeOptions.FixRow))
-				.Aggregate((s1, s2) => $"{s1},{s2}");
+		private string GetCellRange(string columnName, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
+		{
+			string cellRanges = standingsStartAndEndRowNums.Select(item => Utilities.CreateCellRangeString(columnName, item.Item1, item.Item2, CellRangeOptions.FixRow))
+						.Aggregate((s1, s2) => $"{s1},{s2}");
+			if (standingsStartAndEndRowNums.Count() > 1)
+				cellRanges = $"{{{cellRanges}}}";
+
+			return cellRanges;
+		}
+
+		/// <summary>
+		/// Gets the formula for calculating the result for games won tiebreaker; for PSO:
+		/// Most number of wins (If a forfeit game exists for any reason, number of wins or goal differential will not be used to determine the winner.)
+		/// </summary>
+		/// <param name="startRow"></param>
+		/// <param name="scoreEntryStartAndEndRowNums"></param>
+		/// <returns>=IF(COUNTIF({E$3:E$20,E$24:E$41},TRUE)=0,I3,0)
+		/// - if any of the forfeit checkboxes are checked, then 0, otherwise the number of games won
+		/// </returns>
+		public string GetGamesWonTiebreakerFormula(int startRow, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		{
+			string winsCell = Utilities.CreateCellReference(_helper.NumWinsColumnName, startRow);
+			string noForfeitFormula = GetEnsureNoForfeitsFormula(scoreEntryStartAndEndRowNums);
+			return $"=IF({noForfeitFormula}, {winsCell}, 0)";
+		}
+
+		private string GetEnsureNoForfeitsFormula(IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		{
+			string forfeitColumn = _helper.GetColumnNameByHeader(Constants.HDR_FORFEIT);
+			string cellRanges = GetCellRange(forfeitColumn, scoreEntryStartAndEndRowNums);
+			return $"COUNTIF({cellRanges}, TRUE) = 0";
+		}
+
+		/// <summary>
+		/// Gets the formula for calculating the total number of yellow and red cards for use as a tiebreaker
+		/// </summary>
+		/// <param name="rowNum"></param>
+		/// <returns></returns>
+		public string GetMisconductTiebreakerFormula(int rowNum)
+		{
+			string ycCell = Utilities.CreateCellReference(_helper.GetColumnNameByHeader(Constants.HDR_YELLOW_CARDS), rowNum);
+			string rcCell = Utilities.CreateCellReference(_helper.GetColumnNameByHeader(Constants.HDR_RED_CARDS), rowNum);
+			return $"={ycCell} + {rcCell}";
+		}
+
+		/// <summary>
+		/// Gets the formula for calculating the number of goals against (allowed) for the home team for tiebreaker purposes (up to five)
+		/// </summary>
+		/// <param name="rowNum"></param>
+		/// <returns>=IF(C3>5, 5, C3)
+		/// = if the number of goals scored by the away team is greater than 5, then use 5, otherwise use the actual number of goals scored
+		/// </returns>
+		public string GetHomeGoalsAgainstTiebreakerFormula(int rowNum)
+			=> GetGoalCountTiebreakerFormula(rowNum, _helper.AwayGoalsColumnName, 5);
+
+		/// <summary>
+		/// Gets the formula for calculating the number of goals against (allowed) for the away  team for tiebreaker purposes (up to five)
+		/// </summary>
+		/// <param name="rowNum"></param>
+		/// <returns>=IF(B3>5, 5, B3)
+		/// = if the number of goals scored by the home team is greater than 5, then use 5, otherwise use the actual number of goals scored
+		/// </returns>
+		public string GetAwayGoalsAgainstTiebreakerFormula(int rowNum)
+			=> GetGoalCountTiebreakerFormula(rowNum, _helper.HomeGoalsColumnName, 5);
+
+		/// <summary>
+		/// Gets the formula for calculating the number of goals scored for the home team for tiebreaker purposes (up to three)
+		/// </summary>
+		/// <param name="rowNum"></param>
+		/// <returns>=IF(B3>3, 3, B3)
+		/// = if the number of goals scored by the home team is greater than 3, then use 3, otherwise use the actual number of goals scored
+		/// </returns>
+		public string GetHomeGoalsScoredTiebreakerFormula(int rowNum)
+			=> GetGoalCountTiebreakerFormula(rowNum, _helper.HomeGoalsColumnName, 3);
+
+		/// <summary>
+		/// Gets the formula for calculating the number of goals scored for the away team for tiebreaker purposes (up to three)
+		/// </summary>
+		/// <param name="rowNum"></param>
+		/// <returns>=IF(C3>3, 3, C3)
+		/// = if the number of goals scored by the away team is greater than 3, then use 3, otherwise use the actual number of goals scored
+		/// </returns>
+		public string GetAwayGoalsScoredTiebreakerFormula(int rowNum)
+			=> GetGoalCountTiebreakerFormula(rowNum, _helper.AwayGoalsColumnName, 3);
+
+		private string GetGoalCountTiebreakerFormula(int rowNum, string columnName, int max)
+		{
+			string goalsCell = Utilities.CreateCellReference(columnName, rowNum);
+			return $"=IF({goalsCell} > {max}, {max}, {goalsCell})";
+		}
+
+		/// <summary>
+		/// Gets the formula for calcluating the number of goals against tiebreaker
+		/// </summary>
+		/// <param name="startRow">First row of the standings table (will be the same as the start row of the tiebreaker sorting section)</param>
+		/// <param name="numTeamsInDivision"></param>
+		/// <returns>=SUMIFS(AG$3:AG$20, A$3:A$20,"="&Shootout!A11)+SUMIFS(AH$3:AH$20, D$3:D$20,"="&Shootout!A11)
+		/// = sum of away goals tiebreaker column where home team = team name + sum of tiebreaker home goals column where away team = team name
+		/// </returns>
+		public string GetGoalsAgainstTiebreakerFormula(int startRow, int numTeamsInDivision, string teamSheetCell)
+		{
+			string formula = GetGoalCountFromTiebreakerSortSectionFormula(startRow
+						, numTeamsInDivision
+						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_HOME)
+						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_AWAY)
+						, teamSheetCell
+						, false);
+			return $"={formula}";
+		}
+
+		/// <summary>
+		/// Gets the formula for calcluating the number of goals scored tiebreaker
+		/// </summary>
+		/// <param name="startRow">First row of the standings table (will be the same as the start row of the tiebreaker sorting section)</param>
+		/// <param name="numTeamsInDivision"></param>
+		/// <returns>=SUMIFS(AI$3:AI$20, A$3:A$20,"="&Shootout!A11)+SUMIFS(AJ$3:AJ$20, D$3:D$20,"="&Shootout!A11)-P3
+		/// = sum of home goals tiebreaker column where home team = team name + sum of tiebreaker away goals column where away team = team name
+		///   minus the number of goals allowed
+		/// </returns>
+		public string GetGoalDifferentialTiebreakerFormula(int startRow, int numTeamsInDivision, string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		{
+			string goalsForFormula = GetGoalCountFromTiebreakerSortSectionFormula(startRow
+				, numTeamsInDivision
+				, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_FOR_HOME)
+				, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_FOR_AWAY)
+				, teamSheetCell
+				, true);
+			string goalsAgainstCell = Utilities.CreateCellReference(_helper.GoalsAgainstColumnName, startRow);
+			string noForfeitsFormula = GetEnsureNoForfeitsFormula(scoreEntryStartAndEndRowNums);
+			return $"=IF({noForfeitsFormula}, {goalsForFormula} - {goalsAgainstCell}, 0)";
+		}
+
+		private string GetGoalCountFromTiebreakerSortSectionFormula(int startRow, int numTeamsInDivision, string homeGoalsColName, string awayGoalsColName, string teamSheetCell, bool goalsFor)
+		{
+			int endRow = startRow + numTeamsInDivision - 1;
+			return GetGoalsFormula(homeGoalsColName, awayGoalsColName, startRow, endRow, teamSheetCell, goalsFor);
+		}
 	}
 }

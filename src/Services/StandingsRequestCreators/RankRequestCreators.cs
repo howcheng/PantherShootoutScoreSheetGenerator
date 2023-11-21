@@ -13,7 +13,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
 			int startRowNum = config.StartGamesRowNum;
-			int endRowNum = config.EndGamesRowNum;
+			int endRowNum = config.StartGamesRowNum + config.RowCount - 1; // not using EndGamesRowNum here because the pool winners table isn't the same length as the standings table
 			return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula(startRowNum, endRowNum);
 		}
 	}
@@ -43,7 +43,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
 		{
-			PsoStandingsRequestCreatorConfig config = (PsoStandingsRequestCreatorConfig)cfg;
+			TiebreakerRequestCreatorConfig config = (TiebreakerRequestCreatorConfig)cfg;
 			return ((PsoFormulaGenerator)_formulaGenerator).GetCalculatedRankFormula(config.StartGamesRowNum, config.EndGamesRowNum, config.RowCount);
 		}
 	}
@@ -62,21 +62,21 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 	}
 
-	public class StandingsRankWithTiebreakerRequestCreator10Teams : RankRequestCreator
-	{
-		public StandingsRankWithTiebreakerRequestCreator10Teams(FormulaGenerator formGen)
-			: base(formGen, Constants.HDR_RANK)
-		{
-		}
+	//public class StandingsRankWithTiebreakerRequestCreator10Teams : RankRequestCreator
+	//{
+	//	public StandingsRankWithTiebreakerRequestCreator10Teams(FormulaGenerator formGen)
+	//		: base(formGen, Constants.HDR_RANK)
+	//	{
+	//	}
 
-		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
-		{
-			RankRequestCreatorConfig10Teams config = (RankRequestCreatorConfig10Teams)cfg;
-			return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula10Teams(config.StartGamesRowNum, config.StandingsStartAndEndRowNums);
-		}
+	//	protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
+	//	{
+	//		RankRequestCreatorConfig10Teams config = (RankRequestCreatorConfig10Teams)cfg;
+	//		return ((PsoFormulaGenerator)_formulaGenerator).GetRankWithTiebreakerFormula(config.StartGamesRowNum, config.StartGamesRowNum + config.RowCount - 1);
+	//	}
 
-		public override bool IsApplicableToColumn(string columnHeader) => false; // execution of this guy has to be deferred until after the standings tables are created
-	}
+	//	public override bool IsApplicableToColumn(string columnHeader) => false; // execution of this guy has to be deferred until after the standings tables are created
+	//}
 
 	public class OverallRankRequestCreator : RankRequestCreator//StandingsRequestCreator
 	{

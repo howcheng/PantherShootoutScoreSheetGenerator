@@ -78,7 +78,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			const string expected = "=IFS(OR(O3 >= 3, COUNTIF(O$3:O$6, O3) = 1), O3, NOT(P3), O3+1, P3, O3)";
 
 			PsoFormulaGenerator fg = GetFormulaGenerator(4);
-			string formula = fg.GetRankWithTiebreakerFormula(START_ROW, END_STANDINGS_ROW);
+			string formula = fg.GetRankWithTiebreakerFormula(END_STANDINGS_ROW);
 			Assert.Equal(expected, formula);
 		}
 

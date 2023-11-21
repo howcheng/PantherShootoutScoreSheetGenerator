@@ -8,8 +8,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private readonly IStandingsRequestCreatorFactory _requestCreatorFactory;
 
 		public PoolPlayRequestCreator10Teams(DivisionSheetConfig config, IScoreSheetHeadersRequestCreator headersCreator, IScoreInputsRequestCreator inputsCreator, IStandingsTableRequestCreator tableCreator
-			, IStandingsRequestCreatorFactory factory) 
-			: base(config, headersCreator, inputsCreator, tableCreator)
+			, IStandingsRequestCreatorFactory factory, ITiebreakerColumnsRequestCreator tiebreakersCreator, ISortedStandingsListRequestCreator sortedStandingsCreator) 
+			: base(config, headersCreator, inputsCreator, tableCreator, tiebreakersCreator, sortedStandingsCreator)
 		{
 			_requestCreatorFactory = factory;
 		}

@@ -38,7 +38,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			UpdateRequest consolationRequest = CreateChampionshipTeamRow(info, 3, 4, startRowIndex);
 			updateRequests.Add(consolationRequest);
 			ret.ThirdPlaceGameRowNum = startRowIndex + 1;
-			startRowIndex += 1; // this is now the subheader leable row for the championship game
+			startRowIndex += 1; // this is now the subheader label row for the championship game
 
 			// championship: top two teams
 			UpdateRequest subheaderRequest2 = Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.HeaderRowColumns.Count - 1, "CHAMPIONSHIP: 1st place vs 2nd place", 0, cell => cell.SetSubheaderCellFormatting());

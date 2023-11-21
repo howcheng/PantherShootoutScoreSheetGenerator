@@ -33,9 +33,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			Constants.HDR_WINNING_TEAM,
 			Constants.HDR_HOME_PTS,
 			Constants.HDR_AWAY_PTS,
+			Constants.HDR_TIEBREAKER_GOALS_FOR_HOME,
+			Constants.HDR_TIEBREAKER_GOALS_FOR_AWAY,
+			Constants.HDR_TIEBREAKER_GOALS_AGAINST_HOME,
+			Constants.HDR_TIEBREAKER_GOALS_AGAINST_AWAY,
 		};
 		public static List<string> StandingsHeaderRow = new List<string>
 		{
+			Constants.HDR_RANK,
 			Constants.HDR_TEAM_NAME,
 			Constants.HDR_GAMES_PLAYED,
 			Constants.HDR_NUM_WINS,
@@ -44,13 +49,29 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			Constants.HDR_YELLOW_CARDS,
 			Constants.HDR_RED_CARDS,
 			Constants.HDR_GAME_PTS,
-			Constants.HDR_RANK,
-			Constants.HDR_CALC_RANK,
-			Constants.HDR_TIEBREAKER,
 			Constants.HDR_GOALS_FOR,
 			Constants.HDR_GOALS_AGAINST,
 			Constants.HDR_GOAL_DIFF,
 		};
+		public static List<string> MainTiebreakerColumns = new List<string>
+		{
+			Constants.HDR_CALC_RANK,
+			Constants.HDR_TIEBREAKER_H2H,
+			Constants.HDR_TIEBREAKER_WINS,
+			Constants.HDR_TIEBREAKER_CARDS,
+			Constants.HDR_TIEBREAKER_GOALS_AGAINST,
+			Constants.HDR_TIEBREAKER_GOAL_DIFF,
+			Constants.HDR_TIEBREAKER_KFTM_WINNER,
+		};
+
+		public int SortedStandingsListColumnIndex =>
+			GameScoreColumns.Count +
+			StandingsHeaderRow.Count +
+			_teamsPerPool +
+			MainTiebreakerColumns.Count +
+			WinnerAndPointsColumns.Count +
+			1;
+
 		#endregion
 
 		public override int GetColumnIndexByHeader(string colHeader)
@@ -59,18 +80,27 @@ namespace PantherShootoutScoreSheetGenerator.Services
             if (idx > -1)
                 return idx;
 
+			idx = MainTiebreakerColumns.IndexOf(colHeader);
+			if (idx > -1)
+				return CalculateIndexForMainTiebreakerColumns(idx);
+
             idx = WinnerAndPointsColumns.IndexOf(colHeader);
             if (idx > -1)
                 return CalculateIndexForAdditionalColumns(idx);
+
             return idx;
         }
 
-		protected int CalculateIndexForAdditionalColumns(int idx) 
+		protected int CalculateIndexForMainTiebreakerColumns(int idx)
 			=> HeaderRowColumns.Count + StandingsTableColumns.Count + _teamsPerPool + idx;
+
+		protected int CalculateIndexForAdditionalColumns(int idx) 
+			=> HeaderRowColumns.Count + StandingsTableColumns.Count + _teamsPerPool + MainTiebreakerColumns.Count + idx;
 
 		public string HomeTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_HOME_PTS); } }
         public string AwayTeamPointsColumnName { get { return GetColumnNameByHeader(Constants.HDR_AWAY_PTS); } }
         public string CalculatedRankColumnName { get { return GetColumnNameByHeader(Constants.HDR_CALC_RANK); } }
-        public string TiebreakerColumnName { get { return GetColumnNameByHeader(Constants.HDR_TIEBREAKER); } }
+        public string Head2HeadTiebreakerColumnName { get { return GetColumnNameByHeader(Constants.HDR_TIEBREAKER_H2H); } }
+		public string KicksFromTheMarkTiebreakerColumnName { get { return GetColumnNameByHeader(Constants.HDR_TIEBREAKER_KFTM_WINNER); } }
     }
 }

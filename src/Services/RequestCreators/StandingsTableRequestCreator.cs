@@ -29,11 +29,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <returns></returns>
 		public PoolPlayInfo CreateStandingsRequests(PoolPlayInfo info, IEnumerable<Team> poolTeams, int startRowIndex)
 		{
-			List<Request> requests = new List<Request>(_helper.StandingsTableColumns.Count + poolTeams.Count() * 2);
-			Team firstTeam = poolTeams.First();
-			string firstTeamSheetCell = $"{ShootoutConstants.SHOOTOUT_SHEET_NAME}!{firstTeam.TeamSheetCell}";
+			List<Request> requests = new List<Request>(_helper.StandingsTableColumns.Count + poolTeams.Count());
 
 			// team name
+			Team firstTeam = poolTeams.First();
+			string firstTeamSheetCell = $"{ShootoutConstants.SHOOTOUT_SHEET_NAME}!{firstTeam.TeamSheetCell}";
 			Request teamNamesRequest = RequestCreator.CreateRepeatedSheetFormulaRequest(_config.SheetId, startRowIndex, _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME), _config.TeamsPerPool,
 				$"={firstTeamSheetCell}");
 			requests.Add(teamNamesRequest);
@@ -41,6 +41,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			int startGamesRowNum = startRowIndex + 1; // first row in first round is 3
 			int endGamesRowNum = GetEndGamesInPoolRowNumber(_config, startGamesRowNum);
 
+			// standings table
 			foreach (string hdr in _helper.StandingsTableColumns)
 			{
 				IStandingsRequestCreator requestCreator = _requestCreatorFactory.GetRequestCreator(hdr);
@@ -59,11 +60,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					RowCount = _config.TeamsPerPool,
 				};
 				Request request = requestCreator.CreateRequest(creatorConfig);
-				info.UpdateSheetRequests.Add(request);
+				requests.Add(request);
 			}
 
 			// head-to-head tiebreakers
-
 			System.Text.RegularExpressions.Regex reTeamCell = new System.Text.RegularExpressions.Regex(@"(A)(\d+)");
 			int startColumnIndex = _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()) + 1;
 			for (int i = 0; i < _config.TeamsPerPool; i++)

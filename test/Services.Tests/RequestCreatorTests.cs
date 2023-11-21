@@ -60,7 +60,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Request noteRequest = info.UpdateSheetRequests.Single();
 			Assert.NotNull(noteRequest.UpdateCells);
 			Assert.Equal(START_ROW_IDX + 1, noteRequest.UpdateCells.Range.StartRowIndex);
-			Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER), noteRequest.UpdateCells.Range.StartColumnIndex);
+			Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER_H2H), noteRequest.UpdateCells.Range.StartColumnIndex);
 		}
 
 		private void ValidateGameRanges(Request request, DivisionSheetConfig config)

@@ -1,5 +1,4 @@
-﻿using Omu.ValueInjecter;
-using PantherShootoutScoreSheetGenerator.Services;
+﻿using PantherShootoutScoreSheetGenerator.Services;
 using StandingsGoogleSheetsHelper;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -16,33 +15,46 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, ForfeitRequestCreator>();
 
 			// request creators for standings table
+			services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator>(); 
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesPlayedRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesWonRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesLostRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesDrawnRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, TotalPointsRequestCreator>();
+			//services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator10Teams>();
 			if (numTeams == 10)
 			{
 				// 10-team divisions have a separate rank request creator
-				services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator10Teams>();
 				services.AddSingleton<IStandingsRequestCreator, OverallRankRequestCreator>();
 			}
-			else
-				services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator>(); 
-			services.AddSingleton<IStandingsRequestCreator, StandingsCalculatedRankRequestCreator>();
-			services.AddSingleton<IStandingsRequestCreator, StandingsTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsScoredRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalDifferentialRequestCreator>();
-			services.AddSingleton<IStandingsRequestCreator, HeadToHeadComparisonRequestCreator>();
 
-			// request creators for winners and points tables
+			// request creators for tiebreaker columns
+			services.AddSingleton<ITiebreakerColumnsRequestCreator, TiebreakerColumnsRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, HeadToHeadComparisonRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, StandingsCalculatedRankRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, HeadToHeadTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GamesWonTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, MisconductTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GoalDifferentialTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, KicksFromTheMarkTiebreakerRequestCreator>();
+
+			// request creators for winners and points tables, and helper tiebreaker columns
 			services.AddSingleton<IStandingsRequestCreator, GameWinnerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, HomeGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, AwayGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersRankWithTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersCalculatedRankRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstHomeTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstAwayTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GoalsScoredHomeTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, GoalsScoredAwayTiebreakerRequestCreator>();
+
+			services.AddSingleton<ISortedStandingsListRequestCreator, SortedStandingsListRequestCreator>();
 
 			// figure out the correct types to register based on the number of teams
 			Type championshipCreatorType;

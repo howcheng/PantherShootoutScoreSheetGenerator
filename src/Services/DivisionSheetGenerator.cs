@@ -59,7 +59,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					{
 						GridProperties = new GridProperties
 						{
-							ColumnCount = 35,
+							ColumnCount = Helper.SortedStandingsListColumnIndex + 30, // this is an arbitrary number because the exact number could vary depending on how many teams are in the pool
 						},
 						SheetId = SheetId,
 					},
@@ -77,6 +77,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			// resize the columns
 			List<Request> resizeRequests = new List<Request>();
 			resizeRequests.AddRange(Helper.CreateCellWidthRequests(SheetId, _config.TeamNameCellWidth));
+			resizeRequests.AddRange(Helper.CreateCellWidthRequests(SheetId, PsoDivisionSheetHelper.MainTiebreakerColumns, _config.TeamNameCellWidth));
 			await _sheetsClient.ExecuteRequests(resizeRequests);
 
 			// championship updates

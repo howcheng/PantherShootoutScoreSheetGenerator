@@ -12,4 +12,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	{
 		public IEnumerable<Tuple<int, int>> StandingsStartAndEndRowNums { get; set; } = Enumerable.Empty<Tuple<int, int>>();
 	}
+
+	public class TiebreakerRequestCreatorConfig : ScoreBasedStandingsRequestCreatorConfig
+	{
+		public IEnumerable<Tuple<int, int>> StandingsStartAndEndRowNums { get; set; } = Enumerable.Empty<Tuple<int, int>>();
+		public IEnumerable<Tuple<int, int>> ScoreEntryStartAndEndRowNums { get; set; } = Enumerable.Empty<Tuple<int, int>>();
+	}
 }

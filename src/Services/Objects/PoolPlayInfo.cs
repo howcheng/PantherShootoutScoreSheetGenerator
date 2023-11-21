@@ -36,6 +36,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// The start and end row numbers for each of the standings tables (one for each pool, in order)
 		/// </summary>
 		public List<Tuple<int, int>> StandingsStartAndEndRowNums { get; set; } = new List<Tuple<int, int>>();
+		/// <summary>
+		/// The start and end row numbers for the scores entry portion of the sheet (one for each pool, in order)
+		/// </summary>
+		public List<Tuple<int, int>> ScoreEntryStartAndEndRowNums { get; set; } = new List<Tuple<int, int>>();
 	}
 
 	public class ChampionshipInfo : PoolPlayInfo

@@ -12,8 +12,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private string _divisionName = string.Empty;
 
 		public PoolPlayRequestCreator12Teams(DivisionSheetConfig config, IScoreSheetHeadersRequestCreator headersCreator, IScoreInputsRequestCreator inputsCreator, IStandingsTableRequestCreator tableCreator
-			, FormulaGenerator fg, IStandingsRequestCreatorFactory factory) 
-			: base(config, headersCreator, inputsCreator, tableCreator)
+			, FormulaGenerator fg, IStandingsRequestCreatorFactory factory, ITiebreakerColumnsRequestCreator tiebreakersCreator, ISortedStandingsListRequestCreator sortedStandingsCreator) 
+			: base(config, headersCreator, inputsCreator, tableCreator, tiebreakersCreator, sortedStandingsCreator)
 		{
 			_formulaGenerator = (PsoFormulaGenerator)fg;
 			_helper = (PsoDivisionSheetHelper12Teams)_formulaGenerator.SheetHelper;

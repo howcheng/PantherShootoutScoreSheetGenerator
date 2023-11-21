@@ -11,13 +11,18 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected readonly IScoreSheetHeadersRequestCreator _headersRequestCreator;
 		protected readonly IScoreInputsRequestCreator _inputsRequestCreator;
 		protected readonly IStandingsTableRequestCreator _standingsTableRequestCreator;
+		protected readonly ITiebreakerColumnsRequestCreator _tiebreakersRequestCreator;
+		protected readonly ISortedStandingsListRequestCreator _sortedStandingsListRequestCreator;
 
-		public PoolPlayRequestCreator(DivisionSheetConfig config, IScoreSheetHeadersRequestCreator headersCreator, IScoreInputsRequestCreator inputsCreator, IStandingsTableRequestCreator tableCreator)
+		public PoolPlayRequestCreator(DivisionSheetConfig config, IScoreSheetHeadersRequestCreator headersCreator, IScoreInputsRequestCreator inputsCreator
+			, IStandingsTableRequestCreator tableCreator, ITiebreakerColumnsRequestCreator tiebreakersRequestCreator, ISortedStandingsListRequestCreator sortedStandingsListRequestCreator)
 		{
 			_config = config;
 			_headersRequestCreator = headersCreator;
 			_inputsRequestCreator = inputsCreator;
 			_standingsTableRequestCreator = tableCreator;
+			_tiebreakersRequestCreator = tiebreakersRequestCreator;
+			_sortedStandingsListRequestCreator = sortedStandingsListRequestCreator;
 		}
 
 		public virtual PoolPlayInfo CreatePoolPlayRequests(PoolPlayInfo info)
@@ -32,13 +37,21 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				// standings table
 				info = _standingsTableRequestCreator.CreateStandingsRequests(info, pool, startRowIndex + 1);
 				int standingsStartRowNum = startRowIndex + 2;
-				info.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, standingsStartRowNum + _config.TeamsPerPool - 1)); // -1 because A3:A6 is 4 rows
+				int standingsEndRowNum = standingsStartRowNum + _config.TeamsPerPool - 1; // -1 because A3:A6 is 4 rows
+				info.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, standingsEndRowNum));
 
 				// scoring rows
 				for (int i = 0; i < _config.NumberOfRounds; i++)
 				{
 					info = _inputsRequestCreator.CreateScoringRequests(info, pool, i + 1, ref startRowIndex);
 				}
+				info.ScoreEntryStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, startRowIndex - 1)); // -1 because of the blank line inserted at the end of each round
+
+				// tiebreaker columns
+				info = _tiebreakersRequestCreator.CreateTiebreakerRequests(info, pool, standingsStartRowNum - 1);
+
+				// sorted standings list
+				info = _sortedStandingsListRequestCreator.CreateSortedStandingsListRequest(info, standingsStartRowNum, standingsEndRowNum);
 			}
 
 			info.ChampionshipStartRowIndex = startRowIndex;

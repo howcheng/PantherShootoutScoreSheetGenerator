@@ -140,7 +140,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			StandingsRankWithTiebreakerRequestCreator creator = new StandingsRankWithTiebreakerRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			string formula = _fg.GetRankWithTiebreakerFormula(config.StartGamesRowNum, config.EndGamesRowNum);
+			string formula = _fg.GetRankWithTiebreakerFormula(config.EndGamesRowNum);
 			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_RANK));
 		}
 

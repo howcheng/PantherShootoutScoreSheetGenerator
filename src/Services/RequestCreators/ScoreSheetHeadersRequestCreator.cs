@@ -36,7 +36,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			UpdateRequest standingsHeaderRequest = new UpdateRequest(_divisionName)
 			{
 				RowStart = headerRowIndex,
-				ColumnStart = _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME),
+				ColumnStart = _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.First()),
 			};
 			standingsHeaderRequest.Rows.Add(_helper.CreateHeaderRow(_helper.StandingsTableColumns, cell => cell.SetBoldText()));
 			updateRequests.Add(standingsHeaderRequest);
@@ -49,11 +49,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			};
 			GoogleSheetRow tiebreakerHeaderRow = new GoogleSheetRow();
 			tiebreakerHeaderRow.AddRange(poolTeams.Select(x => new GoogleSheetCell() { FormulaValue = $"=\"vs \" & LEFT({ShootoutConstants.SHOOTOUT_SHEET_NAME}!{x.TeamSheetCell}, 2)" }));
+			tiebreakerHeaderRow.AddRange(_helper.CreateHeaderCells(PsoDivisionSheetHelper.MainTiebreakerColumns));
 			tiebreakerHeaderRequest.Rows.Add(tiebreakerHeaderRow);
 			updateRequests.Add(tiebreakerHeaderRequest);
 
-			// note for the manual tiebreaker column
-			int tiebreakerColIdx = _helper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER);
+			// note for the head-to-head tiebreaker column
+			int tiebreakerColIdx = _helper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER_H2H);
 			Request noteRequest = new Request
 			{
 				UpdateCells = new UpdateCellsRequest
