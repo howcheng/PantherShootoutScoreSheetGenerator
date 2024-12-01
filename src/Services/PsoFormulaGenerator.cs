@@ -488,8 +488,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			string formula = GetGoalCountFromTiebreakerSortSectionFormula(startRow
 						, numTeamsInDivision
-						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_HOME)
 						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_AWAY)
+						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_HOME)
 						, teamSheetCell
 						, false);
 			return $"={formula}";
