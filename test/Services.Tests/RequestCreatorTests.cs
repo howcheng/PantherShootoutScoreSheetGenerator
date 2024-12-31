@@ -23,7 +23,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ScoreSheetHeadersRequestCreator creator = new ScoreSheetHeadersRequestCreator(config, helper);
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
-			info = creator.CreateHeaderRequests(info, POOL_A, START_ROW_IDX, teams);
+			IEnumerable<Team> poolTeams = info.Pools!.First();
+			info = creator.CreateHeaderRequests(info, POOL_A, START_ROW_IDX, poolTeams);
 
 			Assert.All(info.UpdateValuesRequests, rq => Assert.Single(rq.Rows));
 			Assert.Collection(info.UpdateValuesRequests
@@ -43,13 +44,13 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 					headerValues.Should().BeEquivalentTo(PsoDivisionSheetHelper.StandingsHeaderRow);
 					Assert.All(rq.Rows.Single(), cell => Assert.True(cell.Bold));
 					Assert.Equal(START_ROW_IDX + 1, rq.RowStart);
-					Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME), rq.ColumnStart);
+					Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_RANK), rq.ColumnStart);
 				}
 				, rq =>
 				{
 					// tiebreakers headers
-					Assert.Equal(teams.Count, rq.Rows.Single().Count());
-					IEnumerable<string> headerValues = rq.Rows.Single().Select(x => x.FormulaValue);
+					Assert.Equal(poolTeams.Count() + PsoDivisionSheetHelper.MainTiebreakerColumns.Count, rq.Rows.Single().Count());
+					IEnumerable<string> headerValues = rq.Rows.Single().Where(x => x.FormulaValue != null).Select(x => x.FormulaValue);
 					Assert.All(headerValues, hdr => hdr.StartsWith($"=\"vs \" & LEFT({ShootoutConstants.SHOOTOUT_SHEET_NAME}!{POOL_A}"));
 					Assert.Equal(START_ROW_IDX + 1, rq.RowStart);
 					Assert.Equal(helper.GetColumnIndexByHeader(Constants.HDR_GOAL_DIFF) + 1, rq.ColumnStart);
@@ -162,9 +163,9 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.All(dvRequests, r => Assert.Equal(startGamesRowIdx, r.SetDataValidation.Range.StartRowIndex));
 			Assert.All(dvRequests, r => Assert.Equal(startGamesRowIdx + config.GamesPerRound, r.SetDataValidation.Range.EndRowIndex));
 
-			// the next four are the forfeit checkbox, and the winner and home/away game points formulas
+			// then we have the forfeit checkbox request and the winner and points column requests
 			IEnumerable<Request> repeatRequests = info.UpdateSheetRequests.Where(r => r.RepeatCell != null);
-			Assert.Equal(4, repeatRequests.Count());
+			Assert.Equal(PsoDivisionSheetHelper.WinnerAndPointsColumns.Count + 1, repeatRequests.Count());
 			Assert.All(repeatRequests, r => Assert.Equal(startGamesRowIdx, r.RepeatCell.Range.StartRowIndex));
 			Assert.All(repeatRequests, r => Assert.Equal(startGamesRowIdx + config.GamesPerRound, r.RepeatCell.Range.EndRowIndex));
 
@@ -258,9 +259,9 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
 			List<Team> teams = CreateTeams(config);
 			PoolPlayInfo info = new PoolPlayInfo(teams);
-			var creators = CreateMocksForPoolPlayRequestCreatorTests(config);
+			CreateMocksForPoolPlayRequestCreatorTests(config);
 
-			PoolPlayRequestCreator creator = new PoolPlayRequestCreator(config, creators.Item1, creators.Item2, creators.Item3);
+			PoolPlayRequestCreator creator = new(config, _mockHeadersCreator.Object, _mockInputsCreator.Object, _mockStandingsCreator.Object, _mockTiebreakerColsCreator.Object, _mockSortedStandingsCreator.Object);
 			info = creator.CreatePoolPlayRequests(info);
 
 			Assert.Equal(26, info.ChampionshipStartRowIndex); // this number comes from the 2021 score sheet for 10U Boys, as that was an 8-team division
@@ -276,9 +277,9 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			List<Team> teams = CreateTeams(config);
 			PoolPlayInfo info = new PoolPlayInfo(teams);
-			var creators = CreateMocksForPoolPlayRequestCreatorTests(config);
+			CreateMocksForPoolPlayRequestCreatorTests(config);
 
-			PoolPlayRequestCreator creator = new PoolPlayRequestCreator(config, creators.Item1, creators.Item2, creators.Item3);
+			PoolPlayRequestCreator creator = new(config, _mockHeadersCreator.Object, _mockInputsCreator.Object, _mockStandingsCreator.Object, _mockTiebreakerColsCreator.Object, _mockSortedStandingsCreator.Object);
 			info = creator.CreatePoolPlayRequests(info);
 
 			Assert.Equal(numTeams <= 5 ? 1 : 2, info.StandingsStartAndEndRowNums.Count);

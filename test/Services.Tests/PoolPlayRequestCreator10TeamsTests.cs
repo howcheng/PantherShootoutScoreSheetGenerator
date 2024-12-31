@@ -16,9 +16,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			info.StandingsStartAndEndRowNums = fixture.CreateMany<Tuple<int, int>>(2).ToList();
 
 			PsoDivisionSheetHelper10Teams helper = new PsoDivisionSheetHelper10Teams(config);
-			var creators = CreateMocksForPoolPlayRequestCreatorTests(config);
+			CreateMocksForPoolPlayRequestCreatorTests(config);
 			IStandingsRequestCreatorFactory factory = CreateStandingsRequestCreatorFactory(teams, config);
-			PoolPlayRequestCreator10Teams creator = new PoolPlayRequestCreator10Teams(config, creators.Item1, creators.Item2, creators.Item3, factory);
+			PoolPlayRequestCreator10Teams creator = new(config, _mockHeadersCreator.Object, _mockInputsCreator.Object, _mockStandingsCreator.Object, factory
+				, _mockTiebreakerColsCreator.Object, _mockSortedStandingsCreator.Object);
 			info = creator.CreatePoolPlayRequests(info);
 
 			// verify the overall rank column

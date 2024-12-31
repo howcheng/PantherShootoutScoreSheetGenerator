@@ -14,6 +14,12 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		// https://stackoverflow.com/questions/1068095/assigning-out-ref-parameters-in-moq
 		private delegate PoolPlayInfo ScoreInputReturns(PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx);
 
+		protected readonly Mock<IScoreSheetHeadersRequestCreator> _mockHeadersCreator = new();
+		protected readonly Mock<IScoreInputsRequestCreator> _mockInputsCreator = new();
+		protected readonly Mock<IStandingsTableRequestCreator> _mockStandingsCreator = new();
+		protected readonly Mock<ITiebreakerColumnsRequestCreator> _mockTiebreakerColsCreator = new();
+		protected readonly Mock<ISortedStandingsListRequestCreator> _mockSortedStandingsCreator = new();
+
 		protected List<Team> CreateTeams(DivisionSheetConfig config)
 		{
 			List<Team> ret = new List<Team>();
@@ -65,25 +71,26 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.All(row, cell => Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor)));
 		};
 
-		protected Tuple<IScoreSheetHeadersRequestCreator, IScoreInputsRequestCreator, IStandingsTableRequestCreator> CreateMocksForPoolPlayRequestCreatorTests(DivisionSheetConfig config)
+		protected void CreateMocksForPoolPlayRequestCreatorTests(DivisionSheetConfig config)
 		{
-			Mock<IScoreSheetHeadersRequestCreator> mockHeadersCreator = new Mock<IScoreSheetHeadersRequestCreator>();
-			mockHeadersCreator.Setup(x => x.CreateHeaderRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<IEnumerable<Team>>()))
+			_mockHeadersCreator.Setup(x => x.CreateHeaderRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<IEnumerable<Team>>()))
 				.Returns((PoolPlayInfo ppi, string poolName, int rowIdx, IEnumerable<Team> teams) => ppi);
 
-			Mock<IScoreInputsRequestCreator> mockInputsCreator = new Mock<IScoreInputsRequestCreator>();
-			mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
+			_mockInputsCreator.Setup(x => x.CreateScoringRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
 				.Returns(new ScoreInputReturns((PoolPlayInfo ppi, IEnumerable<Team> ts, int rnd, ref int idx) =>
 				{
 					idx += config.GamesPerRound + 2; // +2 accounts for the blank row at the end
 					return ppi;
 				}));
 
-			Mock<IStandingsTableRequestCreator> mockStandingsCreator = new Mock<IStandingsTableRequestCreator>();
-			mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
+			_mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
 				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
 
-			return new Tuple<IScoreSheetHeadersRequestCreator, IScoreInputsRequestCreator, IStandingsTableRequestCreator>(mockHeadersCreator.Object, mockInputsCreator.Object, mockStandingsCreator.Object);
+			_mockTiebreakerColsCreator.Setup(x => x.CreateTiebreakerRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
+				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
+
+			_mockSortedStandingsCreator.Setup(x => x.CreateSortedStandingsListRequest(It.IsAny<PoolPlayInfo>(), It.IsAny<int>(), It.IsAny<int>()))
+				.Returns((PoolPlayInfo ppi, int start, int end) => ppi);
 		}
 	}
 }

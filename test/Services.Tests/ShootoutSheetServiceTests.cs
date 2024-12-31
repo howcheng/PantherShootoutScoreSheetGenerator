@@ -88,7 +88,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			Sheet sheet = new Sheet
 			{
-				Properties = fixture.Create<SheetProperties>(),
+				Properties = fixture.Build<SheetProperties>()
+					.OmitAutoProperties()
+					.With(x => x.SheetId, () => fixture.Create<int>())
+					.Create()
 			};
 
 			Mock<ISheetsClient> mockClient = new Mock<ISheetsClient>();

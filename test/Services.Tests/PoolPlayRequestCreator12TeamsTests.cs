@@ -15,10 +15,11 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			PsoDivisionSheetHelper12Teams helper = new PsoDivisionSheetHelper12Teams(config);
 			PsoFormulaGenerator fg = new PsoFormulaGenerator(helper);
-			var creators = CreateMocksForPoolPlayRequestCreatorTests(config);
+			CreateMocksForPoolPlayRequestCreatorTests(config);
 
 			IStandingsRequestCreatorFactory factory = CreateStandingsRequestCreatorFactory(teams, config);
-			PoolPlayRequestCreator12Teams creator = new PoolPlayRequestCreator12Teams(config, creators.Item1, creators.Item2, creators.Item3, fg, factory);
+			PoolPlayRequestCreator12Teams creator = new(config, _mockHeadersCreator.Object, _mockInputsCreator.Object, _mockStandingsCreator.Object, fg, factory
+				, _mockTiebreakerColsCreator.Object, _mockSortedStandingsCreator.Object);
 			info = (PoolPlayInfo12Teams)creator.CreatePoolPlayRequests(info);
 
 			Action<UpdateRequest, List<string>, int> assertPoolWinnersHeaders = (rq, hdrs, rowIdx) =>

@@ -136,11 +136,12 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			PsoStandingsRequestCreatorConfig config = _fixture.Build<PsoStandingsRequestCreatorConfig>()
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.With(x => x.RowCount, TEAMS_PER_POOL)
+				.With(x => x.EndGamesRowNum, START_ROW_NUM + TEAMS_PER_POOL - 1)
 				.Create();
 			StandingsRankWithTiebreakerRequestCreator creator = new StandingsRankWithTiebreakerRequestCreator(_fg);
 			Request request = creator.CreateRequest(config);
 
-			string formula = _fg.GetRankWithTiebreakerFormula(config.EndGamesRowNum);
+			string formula = _fg.GetRankWithTiebreakerFormula(config.StartGamesRowNum, config.EndGamesRowNum);
 			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_RANK));
 		}
 

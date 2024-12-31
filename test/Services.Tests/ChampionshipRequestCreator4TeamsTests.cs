@@ -30,7 +30,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			// expect 5 values updates: 1 for the label, 1 subheader and game input row each for the consolation and championship
 			Action<string, int, Tuple<int, int>> assertChampionshipTeamFormula = (f, poolRank, items) =>
 			{
-				string expected = string.Format("=IF(COUNTIF(G{0}:G{1}, 3)=4, VLOOKUP({2},{{N{0}:N{1},F{0}:F{1}}},2,FALSE), \"\")", items.Item1, items.Item2, poolRank);
+				string expected = string.Format("=IF(COUNTIF(H{0}:H{1}, 3)=4, VLOOKUP({2},{{F{0}:F{1},G{0}:G{1}}},2,FALSE), \"\")", items.Item1, items.Item2, poolRank);
 				Assert.Equal(expected, f);
 			};
 			Action<UpdateRequest, int, int> assertChampionshipScoreEntry = (rq, rank, rowIdx) =>

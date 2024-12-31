@@ -481,7 +481,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// </summary>
 		/// <param name="startRow">First row of the standings table (will be the same as the start row of the tiebreaker sorting section)</param>
 		/// <param name="numTeamsInDivision"></param>
-		/// <returns>=SUMIFS(AG$3:AG$20, A$3:A$20,"="&Shootout!A11)+SUMIFS(AH$3:AH$20, D$3:D$20,"="&Shootout!A11)
+		/// <returns>=SUMIFS(AI$3:AI$20, A$3:A$20,"="&Shootout!A11)+SUMIFS(AJ$3:AJ$20, D$3:D$20,"="&Shootout!A11)
 		/// = sum of away goals tiebreaker column where home team = team name + sum of tiebreaker home goals column where away team = team name
 		/// </returns>
 		public string GetGoalsAgainstTiebreakerFormula(int startRow, int numTeamsInDivision, string teamSheetCell)

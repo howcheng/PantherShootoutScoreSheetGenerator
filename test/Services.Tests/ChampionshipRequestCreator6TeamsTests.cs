@@ -55,7 +55,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		private string GetFirstRoundFormula(int rank, Tuple<int, int> startAndEndRowNums)
-			=> string.Format("=IF(COUNTIF(G{1}:G{2}, 2)=3, VLOOKUP({0},{{N{1}:N{2},F{1}:F{2}}},2,FALSE), \"\")", rank, startAndEndRowNums.Item1, startAndEndRowNums.Item2);
+			=> string.Format("=IF(COUNTIF(H{1}:H{2}, 2)=3, VLOOKUP({0},{{F{1}:F{2},G{1}:G{2}}},2,FALSE), \"\")", rank, startAndEndRowNums.Item1, startAndEndRowNums.Item2);
 
 		private string GetFinalFormula(int rowNum, bool isFinal)
 		{
