@@ -44,8 +44,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
 		{
-			ScoreBasedStandingsRequestCreatorConfig config = (ScoreBasedStandingsRequestCreatorConfig)cfg;
-			return ((PsoFormulaGenerator)_formulaGenerator).GetGoalsAgainstTiebreakerFormula(config.StartGamesRowNum, config.RowCount, config.FirstTeamsSheetCell);
+			TiebreakerRequestCreatorConfig config = (TiebreakerRequestCreatorConfig)cfg;
+			return ((PsoFormulaGenerator)_formulaGenerator).GetGoalsAgainstTiebreakerFormula(config.FirstTeamsSheetCell, config.ScoreEntryStartAndEndRowNums);
 		}
 	}
 
@@ -59,7 +59,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
 		{
 			TiebreakerRequestCreatorConfig config = (TiebreakerRequestCreatorConfig)cfg;
-			return ((PsoFormulaGenerator)_formulaGenerator).GetGoalDifferentialTiebreakerFormula(config.StartGamesRowNum, config.RowCount, config.FirstTeamsSheetCell, config.ScoreEntryStartAndEndRowNums);
+			return ((PsoFormulaGenerator)_formulaGenerator).GetGoalDifferentialTiebreakerFormula(config.FirstTeamsSheetCell, config.ScoreEntryStartAndEndRowNums);
 		}
 	}
 

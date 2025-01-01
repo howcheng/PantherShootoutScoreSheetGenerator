@@ -403,6 +403,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="scoreEntryStartAndEndRowNums"></param>
 		/// <returns>=IF(COUNTIF({E$3:E$20,E$24:E$41},TRUE)=0,I3,0)
 		/// - if any of the forfeit checkboxes are checked, then 0, otherwise the number of games won
+		///   (Wins not used as tiebreaker if any game in the pool/division (in case of 10 teams) has been forfeited)
 		/// </returns>
 		public string GetGamesWonTiebreakerFormula(int startRow, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
 		{
@@ -479,48 +480,72 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <summary>
 		/// Gets the formula for calcluating the number of goals against tiebreaker
 		/// </summary>
-		/// <param name="startRow">First row of the standings table (will be the same as the start row of the tiebreaker sorting section)</param>
-		/// <param name="numTeamsInDivision"></param>
-		/// <returns>=SUMIFS(AI$3:AI$20, A$3:A$20,"="&Shootout!A11)+SUMIFS(AJ$3:AJ$20, D$3:D$20,"="&Shootout!A11)
-		/// = sum of away goals tiebreaker column where home team = team name + sum of tiebreaker home goals column where away team = team name
+		/// <param name="teamSheetCell"></param>
+		/// <param name="scoreEntryStartAndEndRowNums"></param>
+		/// <returns>=SUMIFS(AH$3:AH$12, A$3:A$12,"="&Shootout!A33, E$3:E$12, "<>TRUE")+SUMIFS(AI$3:AI$12, D$3:D$12,"="&Shootout!A33, E$3:E$12, "<>TRUE")
+		/// = sum of away goals tiebreaker column where home team = team name + sum of tiebreaker home goals column where away team = team name,
+		///   except when game was forfeited
 		/// </returns>
-		public string GetGoalsAgainstTiebreakerFormula(int startRow, int numTeamsInDivision, string teamSheetCell)
+		public string GetGoalsAgainstTiebreakerFormula(string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
 		{
-			string formula = GetGoalCountFromTiebreakerSortSectionFormula(startRow
-						, numTeamsInDivision
+			string formula = GetGoalCountFromTiebreakerSortSectionFormula(scoreEntryStartAndEndRowNums
 						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_AWAY)
 						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_HOME)
 						, teamSheetCell
-						, false);
+						, false
+						, true);
 			return $"={formula}";
 		}
 
 		/// <summary>
-		/// Gets the formula for calcluating the number of goals scored tiebreaker
+		/// Gets the formula for calcluating the goal differential tiebreaker
 		/// </summary>
-		/// <param name="startRow">First row of the standings table (will be the same as the start row of the tiebreaker sorting section)</param>
-		/// <param name="numTeamsInDivision"></param>
-		/// <returns>=SUMIFS(AI$3:AI$20, A$3:A$20,"="&Shootout!A11)+SUMIFS(AJ$3:AJ$20, D$3:D$20,"="&Shootout!A11)-P3
-		/// = sum of home goals tiebreaker column where home team = team name + sum of tiebreaker away goals column where away team = team name
-		///   minus the number of goals allowed
+		/// <param name="teamSheetCell"></param>
+		/// <param name="scoreEntryStartAndEndRowNums"></param>
+		/// <returns>=SUMIFS(AF$3:AF$12, A$3:A$12,"="&Shootout!A33, E$3:E$12, "<>TRUE")+SUMIFS(AG$3:AG$12, D$3:D$12,"="&Shootout!A33, E$3:E$12, "<>TRUE") - Z3
+		/// = if any of the forfeit checkboxes are checked, then 0, otherwise sum of home goals tiebreaker column where home team = team name + 
+		///   sum of tiebreaker away goals column where away team = team name minus the number of goals allowed 
+		///   (GD not used when any game in the pool/division (in the case of 10 teams) has been decided by forfeit)
 		/// </returns>
-		public string GetGoalDifferentialTiebreakerFormula(int startRow, int numTeamsInDivision, string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		public string GetGoalDifferentialTiebreakerFormula(string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
 		{
-			string goalsForFormula = GetGoalCountFromTiebreakerSortSectionFormula(startRow
-				, numTeamsInDivision
+			int startRow = scoreEntryStartAndEndRowNums.First().Item1;
+			string goalsForFormula = GetGoalCountFromTiebreakerSortSectionFormula(scoreEntryStartAndEndRowNums
 				, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_FOR_HOME)
 				, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_FOR_AWAY)
 				, teamSheetCell
-				, true);
-			string goalsAgainstCell = Utilities.CreateCellReference(_helper.GoalsAgainstColumnName, startRow);
+				, true
+				, false);
+			string goalsAgainstCell = Utilities.CreateCellReference(_helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST), startRow);
 			string noForfeitsFormula = GetEnsureNoForfeitsFormula(scoreEntryStartAndEndRowNums);
 			return $"=IF({noForfeitsFormula}, {goalsForFormula} - {goalsAgainstCell}, 0)";
 		}
 
-		private string GetGoalCountFromTiebreakerSortSectionFormula(int startRow, int numTeamsInDivision, string homeGoalsColName, string awayGoalsColName, string teamSheetCell, bool goalsFor)
+		private string GetGoalCountFromTiebreakerSortSectionFormula(IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums, string homeGoalsColName, string awayGoalsColName, string teamSheetCell, bool goalsFor, bool omitForfeits)
 		{
-			int endRow = startRow + numTeamsInDivision - 1;
-			return GetGoalsFormula(homeGoalsColName, awayGoalsColName, startRow, endRow, teamSheetCell, goalsFor);
+			int startRow = scoreEntryStartAndEndRowNums.First().Item1;
+			int endRow = scoreEntryStartAndEndRowNums.Last().Item2;
+			return omitForfeits
+				? GetGoalsFormulaOmittingForfeits(homeGoalsColName, awayGoalsColName, startRow, endRow, teamSheetCell, goalsFor)
+				: GetGoalsFormula(homeGoalsColName, awayGoalsColName, startRow, endRow, teamSheetCell, goalsFor);
+		}
+
+		/// <summary>
+		/// This is a copy of <see cref="FormulaGenerator.GetGoalsFormula"/> with the addition of omitting forfeited games
+		/// </summary>
+		private string GetGoalsFormulaOmittingForfeits(string homeGoalsColName, string awayGoalsColName, int startRowNum, int endRowNum, string firstTeamCell, bool goalsFor)
+		{
+			string homeGoalsCellRange = Utilities.CreateCellRangeString(homeGoalsColName, startRowNum, endRowNum, CellRangeOptions.FixRow);
+			string awayGoalsCellRange = Utilities.CreateCellRangeString(awayGoalsColName, startRowNum, endRowNum, CellRangeOptions.FixRow);
+			string homeTeamsCellRange = GetFormulaForGameRangePerTeam(_helper.HomeTeamColumnName, startRowNum, endRowNum, firstTeamCell);
+			string awayTeamsCellRange = GetFormulaForGameRangePerTeam(_helper.AwayTeamColumnName, startRowNum, endRowNum, firstTeamCell);
+
+			string homeGoalsFormula = $"{(goalsFor ? homeGoalsCellRange : awayGoalsCellRange)}, {homeTeamsCellRange}";
+			string awayGoalsFormula = $"{(goalsFor ? awayGoalsCellRange : homeGoalsCellRange)}, {awayTeamsCellRange}";
+
+			string forfeitCellRange = Utilities.CreateCellRangeString(_helper.ForfeitColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
+			string unlessForfeitFormula = $"{forfeitCellRange},\"<>TRUE\"";
+			return $"SUMIFS({homeGoalsFormula}, {unlessForfeitFormula})+SUMIFS({awayGoalsFormula}, {unlessForfeitFormula})";
 		}
 	}
 }

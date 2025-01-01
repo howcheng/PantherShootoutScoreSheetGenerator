@@ -106,5 +106,36 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			string formula = fg.GetOverallRankFormula(START_ROW, startAndEnd);
 			Assert.Equal(expected, formula);
 		}
+
+		[Fact]
+		public void TestGoalsAgainstTiebreakerFormula()
+		{
+			const string expected = "=SUMIFS(AH$3:AH$12, A$3:A$12,\"=\"&Shootout!A3, E$3:E$12,\"<>TRUE\")+SUMIFS(AI$3:AI$12, D$3:D$12,\"=\"&Shootout!A3, E$3:E$12,\"<>TRUE\")";
+
+			PsoFormulaGenerator fg = GetFormulaGenerator(4);
+			List<Tuple<int, int>> startAndEnd = new List<Tuple<int, int>>
+			{
+				new Tuple<int, int>(START_ROW, END_GAMES_ROW_IN_ROUND),
+				new Tuple<int, int>(11, 12)
+			};
+			string formula = fg.GetGoalsAgainstTiebreakerFormula(TEAMS_SHEET_CELL, startAndEnd);
+			Assert.Equal(expected, formula);
+		}
+
+		[Fact]
+		public void TestGoalDifferentialTiebreakerFormula()
+		{
+			const string expected = "=IF(COUNTIF({E$3:E$4,E$7:E$8,E$11:E$12}, TRUE) = 0, SUMIFS(AF$3:AF$12, A$3:A$12,\"=\"&Shootout!A3)+SUMIFS(AG$3:AG$12, D$3:D$12,\"=\"&Shootout!A3) - Z3, 0)";
+
+			PsoFormulaGenerator fg = GetFormulaGenerator(4);
+			List<Tuple<int, int>> startAndEnd = new List<Tuple<int, int>>
+			{
+				new Tuple<int, int>(START_ROW, END_GAMES_ROW_IN_ROUND),
+				new Tuple<int, int>(7, 8),
+				new Tuple<int, int>(11, 12),
+			};
+			string formula = fg.GetGoalDifferentialTiebreakerFormula(TEAMS_SHEET_CELL, startAndEnd);
+			Assert.Equal(expected, formula);
+		}
 	}
 }

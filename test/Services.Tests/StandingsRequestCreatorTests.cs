@@ -219,5 +219,37 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			string formula = fg.GetOverallRankFormula(START_ROW_NUM, startAndEnd);
 			ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_OVERALL_RANK));
 		}
+
+		[Fact]
+		public void TestGoalsAgainstTiebreakerRequestCreator()
+		{
+			IEnumerable<Tuple<int, int>> startAndEnd = _fixture.CreateMany<Tuple<int, int>>(2);
+			TiebreakerRequestCreatorConfig config = _fixture.Build<TiebreakerRequestCreatorConfig>()
+				.With(x => x.StartGamesRowNum, START_ROW_NUM)
+				.With(x => x.StandingsStartAndEndRowNums, startAndEnd)
+				.Create();
+
+			GoalsAgainstTiebreakerRequestCreator creator = new(_fg);
+			Request request = creator.CreateRequest(config);
+
+			string formula = _fg.GetGoalsAgainstTiebreakerFormula(config.FirstTeamsSheetCell, config.ScoreEntryStartAndEndRowNums);
+			ValidateFormula(request, config, formula, _fg.SheetHelper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST));
+		}
+
+		[Fact]
+		public void TestGoalDifferentialTiebreakerRequestCreator()
+		{
+			IEnumerable<Tuple<int, int>> startAndEnd = _fixture.CreateMany<Tuple<int, int>>(2);
+			TiebreakerRequestCreatorConfig config = _fixture.Build<TiebreakerRequestCreatorConfig>()
+				.With(x => x.StartGamesRowNum, START_ROW_NUM)
+				.With(x => x.StandingsStartAndEndRowNums, startAndEnd)
+				.Create();
+
+			GoalDifferentialTiebreakerRequestCreator creator = new(_fg);
+			Request request = creator.CreateRequest(config);
+
+			string formula = _fg.GetGoalDifferentialTiebreakerFormula(config.FirstTeamsSheetCell, config.ScoreEntryStartAndEndRowNums);
+			ValidateFormula(request, config, formula, _fg.SheetHelper.GetColumnIndexByHeader(Constants.HDR_TIEBREAKER_GOAL_DIFF));
+		}
 	}
 }
