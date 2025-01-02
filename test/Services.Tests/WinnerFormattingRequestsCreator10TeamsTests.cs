@@ -13,7 +13,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
 			List<Team> teams = CreateTeams(config);
-			PsoDivisionSheetHelper10Teams helper = new PsoDivisionSheetHelper10Teams(config);
+			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
 			WinnerFormattingRequestsCreator creator = new WinnerFormattingRequestsCreator5Teams(config, new PsoFormulaGenerator(helper));
 
 			Fixture fixture = new Fixture();
@@ -42,7 +42,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Action<AddConditionalFormatRuleRequest, int> assertFormatRequest = (rq, rank) =>
 			{
 				string formula = rq.Rule.BooleanRule.Condition.Values.Single().UserEnteredValue;
-				Assert.Contains($"$O{info.StandingsStartAndEndRowNums.First().Item1}", formula);
+				Assert.Contains($"$F{info.StandingsStartAndEndRowNums.First().Item1}", formula);
 				Assert.True(Colors.GetColorForRank(rank).GoogleColorEquals(rq.Rule.BooleanRule.Format.BackgroundColor));
 				Assert.Collection(rq.Rule.Ranges
 					, rg => assertRange(rg, info.StandingsStartAndEndRowNums.First())

@@ -1,6 +1,4 @@
-﻿using StandingsGoogleSheetsHelper;
-
-namespace PantherShootoutScoreSheetGenerator.Services
+﻿namespace PantherShootoutScoreSheetGenerator.Services
 {
 	/// <summary>
 	/// 
@@ -38,7 +36,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				info = _standingsTableRequestCreator.CreateStandingsRequests(info, pool, startRowIndex + 1);
 				int standingsStartRowNum = startRowIndex + 2;
 				int standingsEndRowNum = standingsStartRowNum + _config.TeamsPerPool - 1; // -1 because A3:A6 is 4 rows
-				info.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, standingsEndRowNum));
+				Tuple<int, int> standingsStartAndEnd = new Tuple<int, int>(standingsStartRowNum, standingsEndRowNum);
+				info.StandingsStartAndEndRowNums.Add(standingsStartAndEnd);
 
 				// scoring rows
 				for (int i = 0; i < _config.NumberOfRounds; i++)
@@ -51,7 +50,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				info = _tiebreakersRequestCreator.CreateTiebreakerRequests(info, pool, standingsStartRowNum - 1);
 
 				// sorted standings list
-				info = _sortedStandingsListRequestCreator.CreateSortedStandingsListRequest(info, standingsStartRowNum, standingsEndRowNum);
+				info = _sortedStandingsListRequestCreator.CreateSortedStandingsListRequest(info);
 			}
 
 			info.ChampionshipStartRowIndex = startRowIndex;

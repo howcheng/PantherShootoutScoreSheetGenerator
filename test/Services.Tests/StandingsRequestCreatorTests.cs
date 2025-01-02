@@ -1,5 +1,4 @@
 ﻿using Google.Apis.Sheets.v4.Data;
-using GoogleSheetsHelper;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services.Tests
@@ -212,7 +211,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				.With(x => x.StartGamesRowNum, START_ROW_NUM)
 				.With(x => x.StandingsStartAndEndRowNums, startAndEnd)
 				.Create();
-			PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper10Teams(DivisionSheetConfigFactory.GetForTeams(10)));
+			PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper(DivisionSheetConfigFactory.GetForTeams(10)));
 			OverallRankRequestCreator creator = new OverallRankRequestCreator(fg);
 			Request request = creator.CreateRequest(config);
 

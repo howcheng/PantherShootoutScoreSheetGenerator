@@ -89,8 +89,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			_mockTiebreakerColsCreator.Setup(x => x.CreateTiebreakerRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
 				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
 
-			_mockSortedStandingsCreator.Setup(x => x.CreateSortedStandingsListRequest(It.IsAny<PoolPlayInfo>(), It.IsAny<int>(), It.IsAny<int>()))
-				.Returns((PoolPlayInfo ppi, int start, int end) => ppi);
+			_mockSortedStandingsCreator.Setup(x => x.CreateSortedStandingsListRequest(It.IsAny<PoolPlayInfo>()))
+				.Returns((PoolPlayInfo ppi) => ppi);
 		}
 	}
 }

@@ -69,6 +69,14 @@
 		}
 	}
 
+	public class DivisionSheetConfig10Teams : DivisionSheetConfig
+	{
+        public DivisionSheetConfig10Teams()
+        {
+			SetupForTeams(10);
+        }
+    }
+
 	public class DivisionSheetConfig12Teams : DivisionSheetConfig
 	{
 		public DivisionSheetConfig12Teams()
@@ -85,13 +93,14 @@
 			{
 				case 4:
 					return new DivisionSheetConfig4Teams();
+				case 5:
+					return new DivisionSheetConfig5Teams();
 				case 6:
 					return new DivisionSheetConfig6Teams();
 				case 8:
 					return new DivisionSheetConfig8Teams();
-				case 5:
 				case 10:
-					return new DivisionSheetConfig5Teams();
+					return new DivisionSheetConfig10Teams();
 				default:
 					return new DivisionSheetConfig12Teams();
 			}

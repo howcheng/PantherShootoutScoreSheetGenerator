@@ -21,7 +21,6 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesLostRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesDrawnRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, TotalPointsRequestCreator>();
-			//services.AddSingleton<IStandingsRequestCreator, StandingsRankWithTiebreakerRequestCreator10Teams>();
 			if (numTeams == 10)
 			{
 				// 10-team divisions have a separate rank request creator
@@ -54,9 +53,22 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, GoalsScoredHomeTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsScoredAwayTiebreakerRequestCreator>();
 
-			services.AddSingleton<ISortedStandingsListRequestCreator, SortedStandingsListRequestCreator>();
-
 			// figure out the correct types to register based on the number of teams
+			Type sortedStandingsCreatorType, standingsTableCreatorType;
+			switch (numTeams)
+			{
+				case 10:
+					sortedStandingsCreatorType = typeof(SortedStandingsListRequestCreator10Teams);
+					standingsTableCreatorType = typeof(StandingsTableRequestCreator10Teams);
+					break;
+				default:
+					sortedStandingsCreatorType = typeof (SortedStandingsListRequestCreator);
+					standingsTableCreatorType = typeof(StandingsTableRequestCreator);
+					break;
+			}
+			services.AddSingleton(typeof(ISortedStandingsListRequestCreator), sortedStandingsCreatorType);
+			services.AddSingleton(typeof(IStandingsTableRequestCreator), standingsTableCreatorType);
+
 			Type championshipCreatorType;
 			switch (numTeams)
 			{
@@ -80,7 +92,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			divisionConfig.TeamNameCellWidth = config.TeamNameCellWidth;
 			divisionConfig.DivisionName = divisionTeams.First().DivisionName;
-			services.AddSingleton<DivisionSheetConfig>(divisionConfig);
+			services.AddSingleton(divisionConfig);
 			services.AddSingleton<IDivisionSheetGenerator>(provider => ActivatorUtilities.CreateInstance<DivisionSheetGenerator>(provider, divisionTeams));
 			services.AddSingleton(provider => (IChampionshipRequestCreator)ActivatorUtilities.CreateInstance(provider, championshipCreatorType));
 
@@ -92,7 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			switch (numTeams)
 			{
 				case 10:
-					helper = new PsoDivisionSheetHelper10Teams(divisionConfig);
+					helper = new PsoDivisionSheetHelper(divisionConfig);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator10Teams);
 					break;
 				case 12:
@@ -104,12 +116,11 @@ namespace Microsoft.Extensions.DependencyInjection
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator);
 					break;
 			}
-			services.AddSingleton<PsoDivisionSheetHelper>(helper);
+			services.AddSingleton(helper);
 			services.AddSingleton<FormulaGenerator>(new PsoFormulaGenerator(helper));
 			services.AddSingleton(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType));
 			services.AddSingleton<IScoreSheetHeadersRequestCreator, ScoreSheetHeadersRequestCreator>();
 			services.AddSingleton<IScoreInputsRequestCreator, ScoreInputsRequestCreator>();
-			services.AddSingleton<IStandingsTableRequestCreator, StandingsTableRequestCreator>();
 
 			Type winnerFormatCreatorType;
 			switch (numTeams)

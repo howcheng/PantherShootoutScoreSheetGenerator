@@ -12,10 +12,13 @@ namespace PantherShootoutScoreSheetGenerator.Services
     {
         private readonly int _teamsPerPool;
 
+		public DivisionSheetConfig DivisionSheetConfig { get; private set; }
+
         public PsoDivisionSheetHelper(DivisionSheetConfig config)
             : base(GameScoreColumns, StandingsHeaderRow)
         {
             _teamsPerPool = config.TeamsPerPool;
+			DivisionSheetConfig = config;
         }
 
 		#region Sheet table columns
@@ -55,7 +58,6 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		};
 		public static List<string> MainTiebreakerColumns = new List<string>
 		{
-			Constants.HDR_CALC_RANK,
 			Constants.HDR_TIEBREAKER_H2H,
 			Constants.HDR_TIEBREAKER_WINS,
 			Constants.HDR_TIEBREAKER_CARDS,

@@ -82,7 +82,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		{
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			List<Team> teams = CreateTeams(config);
-			PsoDivisionSheetHelper helper = numTeams == 10 ? new PsoDivisionSheetHelper10Teams(config) : new PsoDivisionSheetHelper(config);
+			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
 			StandingsTableRequestCreator creator = new StandingsTableRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams, config));
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);

@@ -2,6 +2,9 @@
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
+	/// <summary>
+	/// Request creator to create the rank column, based on the sorted standings list that takes into account tiebreakers
+	/// </summary>
 	public class StandingsRankWithTiebreakerRequestCreator : StandingsRequestCreator
 	{
 		public StandingsRankWithTiebreakerRequestCreator(FormulaGenerator formGen)
@@ -44,7 +47,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
 		{
 			TiebreakerRequestCreatorConfig config = (TiebreakerRequestCreatorConfig)cfg;
-			return ((PsoFormulaGenerator)_formulaGenerator).GetCalculatedRankFormula(config.StartGamesRowNum, config.EndGamesRowNum, config.RowCount);
+			return ((PsoFormulaGenerator)_formulaGenerator).GetCalculatedRankFormula(config.StartGamesRowNum, config.EndGamesRowNum);
 		}
 	}
 
