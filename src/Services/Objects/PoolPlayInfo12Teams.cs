@@ -13,6 +13,7 @@
 			UpdateValuesRequests = poolPlayInfo.UpdateValuesRequests;
 			ChampionshipStartRowIndex = poolPlayInfo.ChampionshipStartRowIndex;
 			StandingsStartAndEndRowNums = poolPlayInfo.StandingsStartAndEndRowNums;
+			ScoreEntryStartAndEndRowNums = poolPlayInfo.ScoreEntryStartAndEndRowNums;
 		}
 
 		/// <summary>

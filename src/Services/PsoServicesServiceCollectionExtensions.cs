@@ -21,11 +21,6 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesLostRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PsoGamesDrawnRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, TotalPointsRequestCreator>();
-			if (numTeams == 10)
-			{
-				// 10-team divisions have a separate rank request creator
-				services.AddSingleton<IStandingsRequestCreator, OverallRankRequestCreator>();
-			}
 			services.AddSingleton<IStandingsRequestCreator, GoalsScoredRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalDifferentialRequestCreator>();
@@ -33,7 +28,6 @@ namespace Microsoft.Extensions.DependencyInjection
 			// request creators for tiebreaker columns
 			services.AddSingleton<ITiebreakerColumnsRequestCreator, TiebreakerColumnsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, HeadToHeadComparisonRequestCreator>();
-			services.AddSingleton<IStandingsRequestCreator, StandingsCalculatedRankRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, HeadToHeadTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GamesWonTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, MisconductTiebreakerRequestCreator>();
@@ -46,7 +40,6 @@ namespace Microsoft.Extensions.DependencyInjection
 			services.AddSingleton<IStandingsRequestCreator, HomeGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, AwayGamePointsRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersRankWithTiebreakerRequestCreator>();
-			services.AddSingleton<IStandingsRequestCreator, PoolWinnersCalculatedRankRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, PoolWinnersTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstHomeTiebreakerRequestCreator>();
 			services.AddSingleton<IStandingsRequestCreator, GoalsAgainstAwayTiebreakerRequestCreator>();
@@ -110,6 +103,7 @@ namespace Microsoft.Extensions.DependencyInjection
 				case 12:
 					helper = new PsoDivisionSheetHelper12Teams(divisionConfig);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator12Teams);
+					services.AddSingleton<IPoolWinnersSortedStandingsListRequestCreator, PoolWinnersSortedStandingsListRequestCreator>();
 					break;
 				default:
 					helper = new PsoDivisionSheetHelper(divisionConfig);

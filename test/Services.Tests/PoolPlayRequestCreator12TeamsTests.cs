@@ -18,8 +18,11 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			CreateMocksForPoolPlayRequestCreatorTests(config);
 
 			IStandingsRequestCreatorFactory factory = CreateStandingsRequestCreatorFactory(teams, config);
+			Mock<IPoolWinnersSortedStandingsListRequestCreator> mockPoolWinnersCreator = new();
+			mockPoolWinnersCreator.Setup(x => x.CreateSortedStandingsListRequest(It.IsAny<PoolPlayInfo>())).Returns((PoolPlayInfo ppi) => ppi);
+
 			PoolPlayRequestCreator12Teams creator = new(config, _mockHeadersCreator.Object, _mockInputsCreator.Object, _mockStandingsCreator.Object, fg, factory
-				, _mockTiebreakerColsCreator.Object, _mockSortedStandingsCreator.Object);
+				, _mockTiebreakerColsCreator.Object, _mockSortedStandingsCreator.Object, mockPoolWinnersCreator.Object);
 			info = (PoolPlayInfo12Teams)creator.CreatePoolPlayRequests(info);
 
 			Action<UpdateRequest, List<string>, int> assertPoolWinnersHeaders = (rq, hdrs, rowIdx) =>
@@ -43,7 +46,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			};
 
 			// expect to have 4 values requests (1 header row, 1 for formulas for team name/points/games played, for both winners and runners-up)
-			int headerRowIdx = info.StandingsStartAndEndRowNums.First().Item1 - 2; // -1 for the header, then -1 to convert to index
+			int headerRowIdx = info.ChampionshipStartRowIndex + 1;
 			Assert.Collection(info.UpdateValuesRequests
 				, rq => assertPoolWinnersHeaders(rq, PsoDivisionSheetHelper12Teams.PoolWinnersHeaderRow, headerRowIdx)
 				, rq => assertPoolWinnersHeaders(rq, PsoDivisionSheetHelper12Teams.RunnersUpHeaderRow, headerRowIdx + config.NumberOfPools + 1)
@@ -63,7 +66,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.All(info.UpdateSheetRequests, rq => Assert.NotNull(rq.RepeatCell));
 
 			// confirm that they all have the correct start row index value
-			int winnersStartRowIdx = info.StandingsStartAndEndRowNums.First().Item1 - 1;
+			int winnersStartRowIdx = info.ChampionshipStartRowIndex + 2;
 			int runnerUpStartRowIdx = winnersStartRowIdx + config.NumberOfPools + 1; // the runners-up section starts immediately after the winners section, +1 for the other header row
 
 			IEnumerable<Request> checkboxRequests = info.UpdateSheetRequests.Where(rq => rq.RepeatCell.Cell.DataValidation != null);
@@ -82,9 +85,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			IEnumerable<Request> rankRequests = info.UpdateSheetRequests.Except(checkboxRequests);
 			Assert.Collection(rankRequests
 				, rq => assertRangeNumbers(rq.RepeatCell.Range, true, helper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK))
-				, rq => assertRangeNumbers(rq.RepeatCell.Range, true, helper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_CALC_RANK))
 				, rq => assertRangeNumbers(rq.RepeatCell.Range, false, helper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK))
-				, rq => assertRangeNumbers(rq.RepeatCell.Range, false, helper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_CALC_RANK))
 				);
 		}
 	}

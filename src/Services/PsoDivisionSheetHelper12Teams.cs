@@ -6,19 +6,17 @@
 		{
 		}
 
-		public static List<string> PoolWinnersHeaderRow = new List<string>
+		public static readonly List<string> PoolWinnersHeaderRow = new List<string>
 		{
 			ShootoutConstants.HDR_POOL_WINNER_RANK,
-			ShootoutConstants.HDR_POOL_WINNER_CALC_RANK,
 			ShootoutConstants.HDR_POOL_WINNERS,
 			ShootoutConstants.HDR_POOL_WINNER_PTS,
 			ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED,
 			ShootoutConstants.HDR_POOL_WINNER_TIEBREAKER,
 		};
-		public static List<string> RunnersUpHeaderRow = new List<string>
+		public static readonly List<string> RunnersUpHeaderRow = new List<string>
 		{
 			ShootoutConstants.HDR_POOL_WINNER_RANK,
-			ShootoutConstants.HDR_POOL_WINNER_CALC_RANK,
 			ShootoutConstants.HDR_RUNNERS_UP,
 			ShootoutConstants.HDR_POOL_WINNER_PTS,
 			ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED,
@@ -35,7 +33,8 @@
 			if (idx == -1)
 				return idx;
 
-			return CalculateIndexForAdditionalColumns(idx + WinnerAndPointsColumns.Count);
+			// pool winners section starts in the same column as the winners and tiebreaker columns
+			return CalculateIndexForAdditionalColumns(idx);
 		}
 	}
 }

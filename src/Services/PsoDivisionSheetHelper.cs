@@ -71,8 +71,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			StandingsHeaderRow.Count +
 			_teamsPerPool +
 			MainTiebreakerColumns.Count +
-			WinnerAndPointsColumns.Count +
-			1;
+			WinnerAndPointsColumns.Count;
 
 		#endregion
 

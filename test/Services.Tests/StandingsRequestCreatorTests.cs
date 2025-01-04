@@ -144,21 +144,21 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_RANK));
 		}
 
-		[Fact]
-		public void TestPoolWinnersRankWithTiebreakerRequestCreator()
-		{
-			// this formula derived from the 2021 score sheet for 14U Boys
-			PsoStandingsRequestCreatorConfig config = _fixture.Build<PsoStandingsRequestCreatorConfig>()
-				.With(x => x.StartGamesRowNum, START_ROW_NUM)
-				.With(x => x.RowCount, TEAMS_PER_POOL)
-				.Create();
-			PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper12Teams(DivisionSheetConfigFactory.GetForTeams(12)));
-			PoolWinnersRankWithTiebreakerRequestCreator creator = new PoolWinnersRankWithTiebreakerRequestCreator(fg);
-			Request request = creator.CreateRequest(config);
+		//[Fact]
+		//public void TestPoolWinnersRankWithTiebreakerRequestCreator()
+		//{
+		//	// this formula derived from the 2021 score sheet for 14U Boys
+		//	PsoStandingsRequestCreatorConfig config = _fixture.Build<PsoStandingsRequestCreatorConfig>()
+		//		.With(x => x.StartGamesRowNum, START_ROW_NUM)
+		//		.With(x => x.RowCount, TEAMS_PER_POOL)
+		//		.Create();
+		//	PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper12Teams(DivisionSheetConfigFactory.GetForTeams(12)));
+		//	PoolWinnersRankWithTiebreakerRequestCreator creator = new PoolWinnersRankWithTiebreakerRequestCreator(fg);
+		//	Request request = creator.CreateRequest(config);
 
-			string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(config.StartGamesRowNum, config.StartGamesRowNum + TEAMS_PER_POOL - 1);
-			ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK));
-		}
+		//	string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(config.StartGamesRowNum, config.StartGamesRowNum + TEAMS_PER_POOL - 1);
+		//	ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_POOL_WINNER_RANK));
+		//}
 
 		[Fact]
 		public void TestHeadToHeadRequestCreator()
@@ -201,22 +201,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			string formula = _fg.GetPsoGamePointsFormulaForAwayTeam(config.StartGamesRowNum);
 			ValidateFormula(request, config, formula, _helper.GetColumnIndexByHeader(Constants.HDR_AWAY_PTS));
-		}
-
-		[Fact]
-		public void TestOverallRankRequestCreator()
-		{
-			IEnumerable<Tuple<int, int>> startAndEnd = _fixture.CreateMany<Tuple<int, int>>(2);
-			RankRequestCreatorConfig10Teams config = _fixture.Build<RankRequestCreatorConfig10Teams>()
-				.With(x => x.StartGamesRowNum, START_ROW_NUM)
-				.With(x => x.StandingsStartAndEndRowNums, startAndEnd)
-				.Create();
-			PsoFormulaGenerator fg = new PsoFormulaGenerator(new PsoDivisionSheetHelper(DivisionSheetConfigFactory.GetForTeams(10)));
-			OverallRankRequestCreator creator = new OverallRankRequestCreator(fg);
-			Request request = creator.CreateRequest(config);
-
-			string formula = fg.GetOverallRankFormula(START_ROW_NUM, startAndEnd);
-			ValidateFormula(request, config, formula, fg.SheetHelper.GetColumnIndexByHeader(ShootoutConstants.HDR_OVERALL_RANK));
 		}
 
 		[Fact]

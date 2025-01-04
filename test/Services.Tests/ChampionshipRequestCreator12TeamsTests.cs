@@ -24,8 +24,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				ChampionshipStartRowIndex = 39,
 				PoolWinnersStartAndEndRowNums = new List<Tuple<int, int>>
 				{ 
-					new Tuple<int, int>(3, 5),
-					new Tuple<int, int>(7, 9),
+					new Tuple<int, int>(42, 44),
+					new Tuple<int, int>(46, 48),
 				}
 			};
 			ChampionshipInfo result = creator.CreateChampionshipRequests(info);
@@ -33,7 +33,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			// expect 5 values updates: 1 for the label, 1 subheader and game input row each for the consolation and championship
 			Action<string, int, Tuple<int, int>> assertChampionshipTeamFormula = (f, poolRank, items) =>
 			{
-				string expected = string.Format("=IF(COUNTIF(AE{0}:AE{1}, 3)=3, VLOOKUP({2},{{AA{0}:AA{1},AC{0}:AC{1}}},2,FALSE), \"\")", items.Item1, items.Item2, poolRank);
+				string expected = string.Format("=IF(COUNTIF(AE{0}:AE{1}, 3)=3, VLOOKUP({2},{{AB{0}:AB{1},AC{0}:AC{1}}},2,FALSE), \"\")", items.Item1, items.Item2, poolRank);
 				Assert.Equal(expected, f);
 			};
 			Action<UpdateRequest, int, int, int> assertChampionshipScoreEntry = (rq, homeRank, awayRank, rowIdx) =>

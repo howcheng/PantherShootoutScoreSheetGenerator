@@ -9,4 +9,8 @@
 		/// <returns></returns>
 		PoolPlayInfo CreateSortedStandingsListRequest(PoolPlayInfo info);
 	}
+
+	public interface IPoolWinnersSortedStandingsListRequestCreator : ISortedStandingsListRequestCreator
+	{
+	}
 }

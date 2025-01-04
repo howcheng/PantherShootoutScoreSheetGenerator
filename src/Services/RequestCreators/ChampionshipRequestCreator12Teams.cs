@@ -31,9 +31,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			updateRequests.Add(Utilities.CreateHeaderLabelRowRequest(_divisionName, startRowIndex, _helper.GetColumnIndexByHeader(_helper.StandingsTableColumns.Last()), "FINALS", 4, cell => cell.SetHeaderCellFormatting()));
 
 			// championship and consolation headers and teams
-			updateRequests.AddRange(CreateHeaderAndTeamRows(info, false, ref startRowIndex, ref startRowNum, "3RD-PLACE: pool-winner with least pts v 2nd-place team with most pts"));
+			updateRequests.AddRange(CreateHeaderAndTeamRows(info, false, ref startRowIndex, ref startRowNum, "3RD-PLACE: 3rd-place pool-winner v 1st-place pool runner-up"));
 			ret.ThirdPlaceGameRowNum = startRowNum;
-			updateRequests.AddRange(CreateHeaderAndTeamRows(info, true, ref startRowIndex, ref startRowNum, "CHAMPIONSHIP: pool-winners with most pts"));
+			updateRequests.AddRange(CreateHeaderAndTeamRows(info, true, ref startRowIndex, ref startRowNum, "CHAMPIONSHIP: 1st-place pool winner v 2nd-place pool winner"));
 			ret.ChampionshipGameRowNum = startRowNum;
 
 			ret.UpdateValuesRequests.AddRange(updateRequests);

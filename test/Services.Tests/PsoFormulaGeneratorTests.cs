@@ -75,35 +75,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		[Fact]
 		public void TestRankWithTiebreakerFormula()
 		{
-			const string expected = "=IFNA(MATCH(G3, AJ$3:AJ$6, 0), \"\")";
+			const string expected = "=IFNA(MATCH(G3, AI$3:AI$6, 0), \"\")";
 
 			PsoFormulaGenerator fg = GetFormulaGenerator(4);
 			string formula = fg.GetRankWithTiebreakerFormula(START_ROW, END_STANDINGS_ROW);
-			Assert.Equal(expected, formula);
-		}
-
-		[Fact]
-		public void TestPoolWinnersRankWithTiebreakerFormula()
-		{
-			const string expected = "=IFNA(IFS(COUNTIF(AB$3:AB$5, AB3) = 1, AB3, NOT(AF3), AB3+1, AF3, AB3), \"\")";
-
-			PsoFormulaGenerator fg = GetFormulaGenerator(12);
-			string formula = fg.GetPoolWinnersRankWithTiebreakerFormula(START_ROW, END_POOL_WINNERS_ROW);
-			Assert.Equal(expected, formula);
-		}
-
-		[Fact]
-		public void TestOverallRankFormula()
-		{
-			const string expected = "=RANK(N3, {N$3:N$7,N$24:N$28})";
-
-			PsoFormulaGenerator fg = GetFormulaGenerator(10);
-			List<Tuple<int, int>> startAndEnd = new List<Tuple<int, int>>
-			{
-				new Tuple<int, int>(3, 7),
-				new Tuple<int, int>(24, 28)
-			};
-			string formula = fg.GetOverallRankFormula(START_ROW, startAndEnd);
 			Assert.Equal(expected, formula);
 		}
 

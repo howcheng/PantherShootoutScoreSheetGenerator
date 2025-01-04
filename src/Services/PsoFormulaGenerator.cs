@@ -181,25 +181,16 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// = find the team name from the sorted list of teams with tiebreakers applied
 		/// </remarks>
 		public string GetRankWithTiebreakerFormula(int startRowNum, int endRowNum)
+			=> GetRankWithTiebreakerFormula(_helper.TeamNameColumnName, startRowNum, endRowNum);
+
+		private string GetRankWithTiebreakerFormula(string teamNameColumnName, int startRowNum, int endRowNum)
 		{
 			string cellRange = Utilities.CreateCellRangeString(Utilities.ConvertIndexToColumnName(_helper.SortedStandingsListColumnIndex), startRowNum, endRowNum, CellRangeOptions.FixRow);
 			string formula = string.Format("=IFNA(MATCH({0}, {1}, 0), \"\")",
-				Utilities.CreateCellReference(_helper.TeamNameColumnName, startRowNum),
+				Utilities.CreateCellReference(teamNameColumnName, startRowNum),
 				cellRange);
 			return formula;
 		}
-
-		//private string GetRankWithTiebreakerFormula(string columnName, string cellRange, int startRowNum)
-		//{
-		//	// =MATCH(G3, AK$3:AK$12, 0)
-		//	string firstRankCell = Utilities.CreateCellReference(columnName, startRowNum);
-		//	string firstTiebreakerCell = $"{_helper.Head2HeadTiebreakerColumnName}{startRowNum}";
-		//	string formula = string.Format("=IFS(OR({0} >= 3, COUNTIF({1}, {0}) = 1), {0}, NOT({2}), {0}+1, {2}, {0})",
-		//		firstRankCell,
-		//		cellRange,
-		//		firstTiebreakerCell);
-		//	return formula;
-		//}
 
 		/// <summary>
 		/// Gets the formula for determining the rank in the standings table, taking into account the tiebreaker checkbox
@@ -213,18 +204,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// otherwise use the calculated rank
 		/// </remarks>
 		public string GetPoolWinnersRankWithTiebreakerFormula(int startRowNum, int endRowNum)
-		{
-			string calcRankColName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_CALC_RANK);
-			string tiebreakerColName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_TIEBREAKER);
-			string cellRange = Utilities.CreateCellRangeString(calcRankColName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			string firstRankCell = $"{calcRankColName}{startRowNum}";
-			string firstTiebreakerCell = $"{tiebreakerColName}{startRowNum}";
-			string rankWithTbFormula = string.Format("=IFNA(IFS(COUNTIF({1}, {0}) = 1, {0}, NOT({2}), {0}+1, {2}, {0}), \"\")",
-				firstRankCell,
-				cellRange,
-				firstTiebreakerCell);
-			return rankWithTbFormula;
-		}
+			=> GetRankWithTiebreakerFormula(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNERS), startRowNum, endRowNum);
 
 		/// <summary>
 		/// Gets the formula for looking up the team name in the pool winners section of a 12-team division
@@ -280,22 +260,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			return $"=IF(COUNTIF({gamesPlayedCellRange},3)=4, VLOOKUP(1,{{{rankCellRange},{gamesPlayedCellRange}}},2,FALSE), \"\")";
 		}
 
-		private string GetGamesPlayedCellForPoolWinnersFormulas(int startRowNum) => Utilities.CreateCellReference(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED), startRowNum);
-		private string GetRankCellRangeForPoolWinnersFormulas(int startRowNum, int endRowNum) => Utilities.CreateCellRangeString(_helper.RankColumnName, startRowNum, endRowNum);
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <returns></returns>
-		/// <remarks>=IF(COUNTIF(G$3:G6, "0")=4, "", RANK(M3,M$3:M$9))
-		/// = if no games played yet, show blank, otherwise do the normal rank formula
-		/// </remarks>
-		public string GetCalculatedRankFormula(int startRowNum, int endRowNum)
-		{
-			string rankFormula = GetTeamRankFormula(_helper.GamePointsColumnName, startRowNum, startRowNum, endRowNum);
-			string gamesPlayedCellRange = Utilities.CreateCellRangeString(_helper.GamesPlayedColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			return $"=IF(COUNTIF({gamesPlayedCellRange}, \"0\")>0, \"\", {rankFormula})";
-		}
+		private string GetGamesPlayedCellForPoolWinnersFormulas(int startRowNum) 
+			=> Utilities.CreateCellReference(_helper.GetColumnNameByHeader(ShootoutConstants.HDR_POOL_WINNER_GAMES_PLAYED), startRowNum);
+		private string GetRankCellRangeForPoolWinnersFormulas(int startRowNum, int endRowNum) 
+			=> Utilities.CreateCellRangeString(_helper.RankColumnName, startRowNum, endRowNum);
 
 		/// <summary>
 		/// Gets the formula to set up the conditional formatting to highlight the winners in the standings tables
@@ -348,25 +316,6 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			}
 			sb.Append(')');
 			return sb.ToString();
-		}
-
-		//public string GetRankWithTiebreakerFormula10Teams(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
-		//{
-		//	string columnName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_OVERALL_RANK);
-		//	string cellRanges = string.Concat("{", GetCellRange(columnName, standingsStartAndEndRowNums), "}");
-		//	return GetRankWithTiebreakerFormula(columnName, cellRanges, rowNum);
-		//}
-
-		/// <summary>
-		/// Gets the formula for calculating the overall rank between both pools in a 10-team division
-		/// </summary>
-		/// <returns></returns>
-		/// <remarks> =RANK(L3, {L$3:L$7,L$24:L$28})</remarks>
-		public string GetOverallRankFormula(int rowNum, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
-		{
-			string columnName = _helper.GetColumnNameByHeader(Constants.HDR_GAME_PTS);
-			string cellRanges = GetCellRange(columnName, standingsStartAndEndRowNums);
-			return $"=RANK({columnName}{rowNum}, {cellRanges})";
 		}
 
 		private string GetCellRange(string columnName, IEnumerable<Tuple<int, int>> standingsStartAndEndRowNums)
@@ -468,7 +417,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="scoreEntryStartAndEndRowNums"></param>
 		/// <returns>=SUMIFS(AH$3:AH$12, A$3:A$12,"="&Shootout!A33, E$3:E$12, "<>TRUE")+SUMIFS(AI$3:AI$12, D$3:D$12,"="&Shootout!A33, E$3:E$12, "<>TRUE")
 		/// = sum of away goals tiebreaker column where home team = team name + sum of tiebreaker home goals column where away team = team name,
-		///   except when game was forfeited
+		///   except when game was forfeited: if a team forfeits we have to enter the score as 1-0 and check the forfeit box, so that 1
+		///   shouldn't count as a goal conceded.
 		/// </returns>
 		public string GetGoalsAgainstTiebreakerFormula(string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
 		{
@@ -515,7 +465,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		}
 
 		/// <summary>
-		/// This is a copy of <see cref="FormulaGenerator.GetGoalsFormula"/> with the addition of omitting forfeited games
+		/// This is a copy of <see cref="FormulaGenerator.GetGoalsFormula"/> with the addition of omitting forfeited games.
+		/// Used for the goals against tiebreaker column. A forfeit should count as 0 goals against.
 		/// </summary>
 		private string GetGoalsFormulaOmittingForfeits(string homeGoalsColName, string awayGoalsColName, int startRowNum, int endRowNum, string firstTeamCell, bool goalsFor)
 		{
