@@ -83,7 +83,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			List<Team> teams = CreateTeams(config);
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			StandingsTableRequestCreator creator = new StandingsTableRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams, config));
+			StandingsTableRequestCreator creator = new StandingsTableRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams));
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
 			info = creator.CreateStandingsRequests(info, teams, START_ROW_IDX);
@@ -98,7 +98,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				{
 					case Constants.HDR_YELLOW_CARDS:
 					case Constants.HDR_RED_CARDS:
-					case ShootoutConstants.HDR_OVERALL_RANK:
 						Assert.Null(rq);
 						continue;
 					default:
@@ -137,7 +136,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(8);
 			List<Team> teams = CreateTeams(config);
 			PsoDivisionSheetHelper helper = new PsoDivisionSheetHelper(config);
-			ScoreInputsRequestCreator creator = new ScoreInputsRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams, config));
+			ScoreInputsRequestCreator creator = new ScoreInputsRequestCreator(config, helper, CreateStandingsRequestCreatorFactory(teams));
 
 			PoolPlayInfo info = new PoolPlayInfo(teams);
 			int startRowIndex = START_ROW_IDX;

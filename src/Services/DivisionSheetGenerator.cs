@@ -7,8 +7,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class DivisionSheetGenerator : IDivisionSheetGenerator
 	{
-		private DivisionSheetConfig _config;
-		private IEnumerable<Team> _divisionTeams;
+		private readonly DivisionSheetConfig _config;
+		private readonly IEnumerable<Team> _divisionTeams;
 
 		protected int? SheetId { get; private set; }
 		protected string DivisionName => _divisionTeams.First().DivisionName;
@@ -39,9 +39,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_divisionTeams = divisionTeams;
 		}
 
-		protected static string END_STANDINGS_COL = Constants.HDR_GOAL_DIFF;
+		protected const string END_STANDINGS_COL = Constants.HDR_GOAL_DIFF;
 
-		public async Task CreateSheet()
+		public async Task CreateSheet(ShootoutSheetConfig shootoutSheetConfig)
 		{
 			_log.LogInformation($"Beginning sheet for {DivisionName}...");
 			if (!SheetId.HasValue)

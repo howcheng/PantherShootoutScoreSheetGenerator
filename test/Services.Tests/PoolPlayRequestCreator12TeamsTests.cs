@@ -17,7 +17,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			PsoFormulaGenerator fg = new PsoFormulaGenerator(helper);
 			CreateMocksForPoolPlayRequestCreatorTests(config);
 
-			IStandingsRequestCreatorFactory factory = CreateStandingsRequestCreatorFactory(teams, config);
+			IStandingsRequestCreatorFactory factory = CreateStandingsRequestCreatorFactory(teams);
 			Mock<IPoolWinnersSortedStandingsListRequestCreator> mockPoolWinnersCreator = new();
 			mockPoolWinnersCreator.Setup(x => x.CreateSortedStandingsListRequest(It.IsAny<PoolPlayInfo>())).Returns((PoolPlayInfo ppi) => ppi);
 

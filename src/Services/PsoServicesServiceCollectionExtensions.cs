@@ -5,7 +5,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
 	public static class PsoServicesServiceCollectionExtensions
 	{
-		public static IServiceCollection AddPantherShootoutServices(this IServiceCollection services, IEnumerable<Team> divisionTeams, DivisionSheetConfig config)
+		public static IServiceCollection AddPantherShootoutServices(this IServiceCollection services, IEnumerable<Team> divisionTeams, ShootoutSheetConfig config)
 		{
 			int numTeams = divisionTeams.Count();
 

@@ -33,20 +33,15 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_formulaGenerator = new FormulaGenerator(_helper);
 		}
 
-		public async Task<DivisionSheetConfig> GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams)
+		public async Task<ShootoutSheetConfig> GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams)
 		{
 			_logger.LogInformation("Generating Shootout sheet");
 
 			// rename the first sheet from the default "Sheet1" -- do this first
-			Sheet sheet = await _sheetsClient.GetOrAddSheet("Sheet1");
-			sheet.Properties.Title = ShootoutConstants.SHOOTOUT_SHEET_NAME;
-			Request titleRequest = new Request
+			Sheet sheet = await RenameSheet();
+			ShootoutSheetConfig config = new()
 			{
-				UpdateSheetProperties = new UpdateSheetPropertiesRequest
-				{
-					Properties = sheet.Properties,
-					Fields = "title",
-				},
+				SheetId = sheet.Properties.SheetId,
 			};
 			await _sheetsClient.ExecuteRequests(new[] { titleRequest });
 
@@ -72,7 +67,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				{
 					new GoogleSheetCell(division.Key).SetHeaderCellFormatting()
 				};
-				headerRow.AddRange(Enumerable.Repeat(string.Empty, HeaderRowColumns.Count() - 1).Select(x => new GoogleSheetCell(x).SetHeaderCellFormatting()));
+				headerRow.AddRange(Enumerable.Repeat(string.Empty, HeaderRowColumns.Length - 1).Select(x => new GoogleSheetCell(x).SetHeaderCellFormatting()));
 				divisionRequest.Rows.Add(headerRow);
 
 				// subheader row
@@ -100,11 +95,24 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			await _sheetsClient.ExecuteRequests(updateSheetRequests);
 
 			// resize the team name column
-			int teamNameColWidth = await _sheetsClient.AutoResizeColumn(ShootoutConstants.SHOOTOUT_SHEET_NAME, 0);
-			return new DivisionSheetConfig
+			config.TeamNameCellWidth = await _sheetsClient.AutoResizeColumn(ShootoutConstants.SHOOTOUT_SHEET_NAME, 0);
+			return config;
+		}
+
+		private async Task<Sheet> RenameSheet()
+		{
+			Sheet sheet = await _sheetsClient.GetOrAddSheet("Sheet1");
+			sheet.Properties.Title = ShootoutConstants.SHOOTOUT_SHEET_NAME;
+			Request titleRequest = new Request
 			{
-				TeamNameCellWidth = teamNameColWidth
+				UpdateSheetProperties = new UpdateSheetPropertiesRequest
+			{
+					Properties = sheet.Properties,
+					Fields = "title",
+				},
 			};
+			await _sheetsClient.ExecuteRequests(new[] { titleRequest });
+			return sheet;
 		}
 
 		internal GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount)

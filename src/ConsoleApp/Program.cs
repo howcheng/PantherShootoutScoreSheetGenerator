@@ -46,7 +46,7 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			return services.BuildServiceProvider();
 		}
 
-		static IServiceProvider BuildServiceProvider(IServiceProvider provider, IEnumerable<Team> divisionTeams, DivisionSheetConfig config)
+		static IServiceProvider BuildServiceProvider(IServiceProvider provider, IEnumerable<Team> divisionTeams, ShootoutSheetConfig config)
 		{
 			IServiceCollection services = new ServiceCollection();
 			services.AddLogging(builder =>
@@ -100,10 +100,10 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			ISheetsClient sheetsClient = provider.GetRequiredService<ISheetsClient>();
 			await sheetsClient.CreateSpreadsheet($"{DateTime.Today.Year} Panther Shootout scores");
 			ILogger<Program> logger = provider.GetRequiredService<ILogger<Program>>();
-			logger.LogInformation($"Spreadsheet ID {sheetsClient.SpreadsheetId} created");
+			logger.LogInformation("Spreadsheet ID {id} created", sheetsClient.SpreadsheetId);
 
 			IShootoutSheetService shootoutSheetService = provider.GetRequiredService<IShootoutSheetService>();
-			DivisionSheetConfig config = await shootoutSheetService.GenerateSheet(teams);
+			ShootoutSheetConfig config = await shootoutSheetService.GenerateSheet(teams);
 
 			// loop thru the divisions
 			foreach (KeyValuePair<string, IEnumerable<Team>> pair in teams)

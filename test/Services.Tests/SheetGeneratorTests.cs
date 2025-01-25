@@ -38,10 +38,10 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			return ret;
 		}
 
-		protected static IStandingsRequestCreatorFactory CreateStandingsRequestCreatorFactory(IEnumerable<Team> teams, DivisionSheetConfig config)
+		protected static IStandingsRequestCreatorFactory CreateStandingsRequestCreatorFactory(IEnumerable<Team> teams)
 		{
 			IServiceCollection services = new ServiceCollection();
-			services.AddPantherShootoutServices(teams, config);
+			services.AddPantherShootoutServices(teams, new ShootoutSheetConfig());
 			IServiceProvider provider = services.BuildServiceProvider();
 			return provider.GetRequiredService<IStandingsRequestCreatorFactory>();
 		}

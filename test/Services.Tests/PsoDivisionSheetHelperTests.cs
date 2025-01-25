@@ -9,7 +9,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		{
 			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			IServiceCollection services = new ServiceCollection();
-			services.AddPantherShootoutServices(CreateTeams(config), config);
+			services.AddPantherShootoutServices(CreateTeams(config), new ShootoutSheetConfig());
 			IServiceProvider provider = services.BuildServiceProvider();
 
 			PsoDivisionSheetHelper helper = provider.GetRequiredService<PsoDivisionSheetHelper>();
