@@ -14,7 +14,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		{
 			// confirm that the cell ranges and sort column numbers are done correctly
 			Fixture fixture = new();
-			DivisionSheetConfig config = new DivisionSheetConfig { GamesPerRound = GAMES_PER_ROUND, NumberOfRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL };
+			DivisionSheetConfig config = new DivisionSheetConfig { GamesPerRound = GAMES_PER_ROUND, NumberOfGameRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL };
 			PsoDivisionSheetHelper helper = new(config);
 			PsoFormulaGenerator fg = new(helper);
 

@@ -9,7 +9,11 @@
 		public int NumberOfPools => NumberOfTeams / TeamsPerPool;
 		public int GamesPerRound { get; set; }
 		public int TotalPoolPlayGames => TeamsPerPool - 1;
-		public int NumberOfRounds { get; set; }
+		public int NumberOfGameRounds { get; set; }
+		public int NumberOfShootoutRounds { get; set; }
+		/// <summary>
+		/// Gets populated from <see cref="ShootoutSheetConfig.TeamNameCellWidth"/>
+		/// </summary>
 		public int TeamNameCellWidth { get; set; }
 
 		protected void SetupForTeams(int numTeams)
@@ -18,18 +22,19 @@
 			switch (numTeams)
 			{
 				case 6:
-					NumberOfRounds = 3;
+					NumberOfGameRounds = NumberOfShootoutRounds = 3;
 					GamesPerRound = 1;
 					TeamsPerPool = 3;
 					break;
 				case 5:
 				case 10:
-					NumberOfRounds = 5;
+					NumberOfGameRounds = 5;
+					NumberOfShootoutRounds = 4;
 					GamesPerRound = 2;
 					TeamsPerPool = 5;
 					break;
 				default: // 4, 8, or 12 teams
-					NumberOfRounds = 3;
+					NumberOfGameRounds = NumberOfShootoutRounds = 3;
 					GamesPerRound = 2;
 					TeamsPerPool = 4;
 					break;

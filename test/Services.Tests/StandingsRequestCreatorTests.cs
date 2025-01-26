@@ -16,7 +16,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public StandingsRequestCreatorTests()
 		{
 			_fixture = new Fixture();
-			_helper = new PsoDivisionSheetHelper(new DivisionSheetConfig { GamesPerRound = GAMES_PER_ROUND, NumberOfRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL });
+			_helper = new PsoDivisionSheetHelper(new DivisionSheetConfig { GamesPerRound = GAMES_PER_ROUND, NumberOfGameRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL });
 			_fg = new PsoFormulaGenerator(_helper);
 		}
 

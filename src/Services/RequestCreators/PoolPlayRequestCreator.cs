@@ -40,7 +40,7 @@
 				info.StandingsStartAndEndRowNums.Add(standingsStartAndEnd);
 
 				// scoring rows
-				for (int i = 0; i < _config.NumberOfRounds; i++)
+				for (int i = 0; i < _config.NumberOfGameRounds; i++)
 				{
 					info = _inputsRequestCreator.CreateScoringRequests(info, pool, i + 1, ref startRowIndex);
 				}

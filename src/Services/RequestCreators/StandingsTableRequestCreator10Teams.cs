@@ -39,7 +39,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				StartGamesRowNum = startRowNum,
 				SheetStartRowIndex = standingsRowIdx,
 				GamesPerRound = _config.GamesPerRound,
-				NumberOfRounds = _config.NumberOfRounds,
+				NumberOfRounds = _config.NumberOfGameRounds,
 				RowCount = _config.NumberOfTeams, // this would be TeamsPerPool normally
 			};
 			Request req = rankCreator.CreateRequest(config);

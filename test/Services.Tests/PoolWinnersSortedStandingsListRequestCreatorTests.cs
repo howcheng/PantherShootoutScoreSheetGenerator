@@ -5,7 +5,6 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 	public class PoolWinnersSortedStandingsListRequestCreatorTests
 	{
 		private const int TEAMS_PER_POOL = 4;
-		private const int START_ROW_NUM = 3;
 		private const int GAMES_PER_ROUND = 2;
 		private const int NUM_ROUNDS = 3;
 
@@ -13,8 +12,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public void CanCreateSortedStandingsListRequest()
 		{
 			// confirm that the cell ranges and sort column numbers are done correctly
-			Fixture fixture = new();
-			DivisionSheetConfig12Teams config = new DivisionSheetConfig12Teams { GamesPerRound = GAMES_PER_ROUND, NumberOfRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL };
+			DivisionSheetConfig12Teams config = new() { GamesPerRound = GAMES_PER_ROUND, NumberOfGameRounds = NUM_ROUNDS, TeamsPerPool = TEAMS_PER_POOL };
 			PsoDivisionSheetHelper12Teams helper = new(config);
 			PsoFormulaGenerator fg = new(helper);
 

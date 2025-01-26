@@ -80,7 +80,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				EndGamesRowNum = endGamesRowNum,
 				FirstTeamsSheetCell = firstTeamSheetCell,
 				GamesPerRound = _config.GamesPerRound,
-				NumberOfRounds = _config.NumberOfRounds,
+				NumberOfRounds = _config.NumberOfGameRounds,
 				RowCount = _config.TeamsPerPool,
 			};
 			Request request = requestCreator.CreateRequest(creatorConfig);
@@ -137,7 +137,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <returns></returns>
 		private static int GetEndGamesInPoolRowNumber(DivisionSheetConfig config, int startGamesRowNum)
 		{
-			int offset = (config.NumberOfRounds * config.GamesPerRound) + ((config.NumberOfRounds - 1) * Constants.ROUND_OFFSET_STANDINGS_TABLE);
+			int offset = (config.NumberOfGameRounds * config.GamesPerRound) + ((config.NumberOfGameRounds - 1) * Constants.ROUND_OFFSET_STANDINGS_TABLE);
 			return startGamesRowNum + offset - 1; // if we have 10 rows total (including blank/header rows), A3:A12 includes 10 rows so -1 to make it work
 		}
 	}
