@@ -17,6 +17,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public override PoolPlayInfo CreateSortedStandingsListRequest(PoolPlayInfo info)
 		{
 			// =SORT({G3:AA5;G24:G29},8,false,15,true,16,false,17,true,18,false,19,true,20,false,21,false) 15 = the relative cell number (counting from G3) containing the calculated rank formula
+			
+			// build the array reference
 			StringBuilder sb = new("{");
 			bool first = true;
 			foreach (var startAndEnd in info.StandingsStartAndEndRowNums)

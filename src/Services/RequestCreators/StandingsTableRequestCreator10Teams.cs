@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Google.Apis.Sheets.v4.Data;
+﻿using Google.Apis.Sheets.v4.Data;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
@@ -9,7 +8,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	/// </summary>
 	public sealed class StandingsTableRequestCreator10Teams : StandingsTableRequestCreator
 	{
-		public StandingsTableRequestCreator10Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory) 
+		public StandingsTableRequestCreator10Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory)
 			: base(config, helper, factory)
 		{
 		}
@@ -18,21 +17,40 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			info = base.CreateStandingsRequests(info, poolTeams, startRowIndex);
 
+			// rank, tiebreaker wins, and tiebreaker goal diff columns -- all need to account for both pools
 			int firstRowNum = info.StandingsStartAndEndRowNums.First().Item1;
 			int pool1StartIdx = firstRowNum - 1;
 			int pool2StartIdx = info.StandingsStartAndEndRowNums.Last().Item1 - 1;
+
+			CreateRankRequests(info, firstRowNum, pool1StartIdx, pool2StartIdx);
+
+			return info;
+		}
+
+		protected override Request? CreateRequestForStandingsTableColumn(string hdr, int startGamesRowNum, int startRowIndex, int endGamesRowNum, string firstTeamSheetCell)
+		{
+			switch (hdr)
+			{
+				// skip the rank requests for now because we need both pools to be built before we can do them
+				case Constants.HDR_RANK:
+					return null;
+				default:
+					return base.CreateRequestForStandingsTableColumn(hdr, startGamesRowNum, startRowIndex, endGamesRowNum, firstTeamSheetCell);
+			}
+		}
+
+		private void CreateRankRequests(PoolPlayInfo info, int firstRowNum, int pool1StartIdx, int pool2StartIdx)
+		{
 			Request pool1Req = CreateRankRequest(firstRowNum, pool1StartIdx);
 			Request pool2Req = CreateRankRequest(firstRowNum, pool2StartIdx);
 
 			info.UpdateSheetRequests.Add(pool1Req);
 			info.UpdateSheetRequests.Add(pool2Req);
-
-			return info;
 		}
 
 		private Request CreateRankRequest(int startRowNum, int standingsRowIdx)
 		{
-			IStandingsRequestCreator rankCreator = _requestCreatorFactory.GetRequestCreator(Constants.HDR_RANK);
+			IStandingsRequestCreator creator = _requestCreatorFactory.GetRequestCreator(Constants.HDR_RANK);
 			PsoStandingsRequestCreatorConfig config = new()
 			{
 				SheetId = _config.SheetId,
@@ -42,17 +60,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				NumberOfRounds = _config.NumberOfGameRounds,
 				RowCount = _config.NumberOfTeams, // this would be TeamsPerPool normally
 			};
-			Request req = rankCreator.CreateRequest(config);
+			Request req = creator.CreateRequest(config);
 			return req;
-		}
-
-		protected override Request? CreateRequestForStandingsTableColumn(string hdr, int startGamesRowNum, int startRowIndex, int endGamesRowNum, string firstTeamSheetCell)
-		{
-			// skip the rank request for now because we need both pools to be built before we can do it
-			if (hdr == Constants.HDR_RANK)
-				return null;
-
-			return base.CreateRequestForStandingsTableColumn(hdr, startGamesRowNum, startRowIndex, endGamesRowNum, firstTeamSheetCell);
 		}
 	}
 }

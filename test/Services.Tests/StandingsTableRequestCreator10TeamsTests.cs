@@ -38,6 +38,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			};
 			info = creator.CreateStandingsRequests(info, info.Pools!.First(), 2);
 
+			// verify that the rank column spans both pools
 			int rankColIdx = helper.GetColumnIndexByHeader(Constants.HDR_RANK); // 5 (column F)
 			IEnumerable<Request> rankRequests = info.UpdateSheetRequests.Where(x => x.RepeatCell != null && x.RepeatCell.Range.StartColumnIndex == rankColIdx);
 			Assert.Equal(2, rankRequests.Count());
