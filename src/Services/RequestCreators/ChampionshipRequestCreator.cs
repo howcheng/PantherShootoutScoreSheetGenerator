@@ -1,4 +1,5 @@
 ﻿using GoogleSheetsHelper;
+using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
@@ -8,11 +9,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected readonly DivisionSheetConfig _config;
 		protected readonly PsoDivisionSheetHelper _helper;
 
-		protected ChampionshipRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+		protected ChampionshipRequestCreator(DivisionSheetConfig config, StandingsSheetHelper helper)
 		{
 			_divisionName = config.DivisionName;
 			_config = config;
-			_helper = helper;
+			_helper = (PsoDivisionSheetHelper)helper;
 		}
 
 		public abstract ChampionshipInfo CreateChampionshipRequests(PoolPlayInfo poolPlayInfo);

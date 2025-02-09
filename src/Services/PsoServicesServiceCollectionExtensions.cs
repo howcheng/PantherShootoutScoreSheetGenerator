@@ -55,7 +55,7 @@ namespace Microsoft.Extensions.DependencyInjection
 					standingsTableCreatorType = typeof(StandingsTableRequestCreator10Teams);
 					break;
 				default:
-					sortedStandingsCreatorType = typeof (SortedStandingsListRequestCreator);
+					sortedStandingsCreatorType = typeof(SortedStandingsListRequestCreator);
 					standingsTableCreatorType = typeof(StandingsTableRequestCreator);
 					break;
 			}
@@ -85,34 +85,35 @@ namespace Microsoft.Extensions.DependencyInjection
 			DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
 			divisionConfig.TeamNameCellWidth = config.TeamNameCellWidth;
 			divisionConfig.DivisionName = divisionTeams.First().DivisionName;
-			services.AddSingleton(divisionConfig);
+			config.DivisionConfigs.Add(divisionConfig.DivisionName, divisionConfig);
+
+			services.AddSingleton<DivisionSheetConfig>(divisionConfig); // need to register this as the base type
 			services.AddSingleton<IDivisionSheetGenerator>(provider => ActivatorUtilities.CreateInstance<DivisionSheetGenerator>(provider, divisionTeams));
-			services.AddSingleton(provider => (IChampionshipRequestCreator)ActivatorUtilities.CreateInstance(provider, championshipCreatorType));
+			services.AddSingleton(typeof(IChampionshipRequestCreator), championshipCreatorType);
 
 			// register the correct request creators for the number of teams
 			string divisionName = divisionTeams.First().DivisionName;
 
-			PsoDivisionSheetHelper helper;
-			Type poolPlayCreatorType;
+			Type sheetHelperType, poolPlayCreatorType;
 			switch (numTeams)
 			{
 				case 10:
-					helper = new PsoDivisionSheetHelper(divisionConfig);
+					sheetHelperType = typeof(PsoDivisionSheetHelper);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator10Teams);
 					break;
 				case 12:
-					helper = new PsoDivisionSheetHelper12Teams(divisionConfig);
+					sheetHelperType = typeof(PsoDivisionSheetHelper12Teams);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator12Teams);
 					services.AddSingleton<IPoolWinnersSortedStandingsListRequestCreator, PoolWinnersSortedStandingsListRequestCreator>();
 					break;
 				default:
-					helper = new PsoDivisionSheetHelper(divisionConfig);
+					sheetHelperType = typeof(PsoDivisionSheetHelper);
 					poolPlayCreatorType = typeof(PoolPlayRequestCreator);
 					break;
 			}
-			services.AddSingleton(helper);
-			services.AddSingleton<FormulaGenerator>(new PsoFormulaGenerator(helper));
-			services.AddSingleton(provider => (IPoolPlayRequestCreator)ActivatorUtilities.CreateInstance(provider, poolPlayCreatorType));
+			services.AddSingleton(typeof(StandingsSheetHelper), sheetHelperType);
+			services.AddSingleton<FormulaGenerator, PsoFormulaGenerator>();
+			services.AddSingleton(typeof(IPoolPlayRequestCreator), poolPlayCreatorType);
 			services.AddSingleton<IScoreSheetHeadersRequestCreator, ScoreSheetHeadersRequestCreator>();
 			services.AddSingleton<IScoreInputsRequestCreator, ScoreInputsRequestCreator>();
 
@@ -127,7 +128,7 @@ namespace Microsoft.Extensions.DependencyInjection
 					winnerFormatCreatorType = typeof(WinnerFormattingRequestsCreator);
 					break;
 			}
-			services.AddSingleton(provider => (IWinnerFormattingRequestsCreator)ActivatorUtilities.CreateInstance(provider, winnerFormatCreatorType));
+			services.AddSingleton(typeof(IWinnerFormattingRequestsCreator), winnerFormatCreatorType);
 
 			return services;
 		}

@@ -15,10 +15,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		protected readonly PsoDivisionSheetHelper _helper;
 		protected readonly IStandingsRequestCreatorFactory _requestCreatorFactory;
 
-		public StandingsTableRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory)
+		public StandingsTableRequestCreator(DivisionSheetConfig config, StandingsSheetHelper helper, IStandingsRequestCreatorFactory factory)
 		{
 			_config = config;
-			_helper = helper;
+			_helper = (PsoDivisionSheetHelper)helper;
 			_requestCreatorFactory = factory;
 		}
 

@@ -10,11 +10,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private readonly DivisionSheetConfig _config;
 		private readonly PsoDivisionSheetHelper _helper;
 
-		public ScoreSheetHeadersRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+		public ScoreSheetHeadersRequestCreator(DivisionSheetConfig config, StandingsSheetHelper helper)
 		{
 			_divisionName = config.DivisionName;
 			_config = config;
-			_helper = helper;
+			_helper = (PsoDivisionSheetHelper)helper;
 		}
 
 		public virtual PoolPlayInfo CreateHeaderRequests(PoolPlayInfo info, string poolName, int startRowIndex, IEnumerable<Team> poolTeams)

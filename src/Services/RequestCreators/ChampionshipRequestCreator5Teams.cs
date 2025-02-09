@@ -1,8 +1,10 @@
-﻿namespace PantherShootoutScoreSheetGenerator.Services
+﻿using StandingsGoogleSheetsHelper;
+
+namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public class ChampionshipRequestCreator5Teams : ChampionshipRequestCreator
 	{
-		public ChampionshipRequestCreator5Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper)
+		public ChampionshipRequestCreator5Teams(DivisionSheetConfig config, StandingsSheetHelper helper)
 			: base(config, helper)
 		{
 		}

@@ -8,7 +8,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	/// </summary>
 	public sealed class StandingsTableRequestCreator10Teams : StandingsTableRequestCreator
 	{
-		public StandingsTableRequestCreator10Teams(DivisionSheetConfig config, PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory)
+		public StandingsTableRequestCreator10Teams(DivisionSheetConfig config, StandingsSheetHelper helper, IStandingsRequestCreatorFactory factory)
 			: base(config, helper, factory)
 		{
 		}
