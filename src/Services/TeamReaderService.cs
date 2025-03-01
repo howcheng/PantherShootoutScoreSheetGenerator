@@ -37,7 +37,18 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				IEnumerable<IGrouping<string, Team>> teamsGrouped = teams.GroupBy(x => x.DivisionName);
 
 				_logger.LogInformation($"Found {teams.Count()} teams across {teamsGrouped.Count()} divisions");
-				return new SortedDictionary<string, IEnumerable<Team>>(teamsGrouped.ToDictionary(x => x.Key, x => x.AsEnumerable()));
+
+				// divisions should be in the same order as in ShootoutConstants.DivisionNames
+				var orderedTeams = new Dictionary<string, IEnumerable<Team>>();
+				foreach (string division in ShootoutConstants.DivisionNames)
+				{
+					if (teamsGrouped.Any(g => g.Key == division))
+					{
+						orderedTeams[division] = teamsGrouped.First(g => g.Key == division).AsEnumerable();
+					}
+				}
+
+				return orderedTeams;
 			}
 		}
 	}
