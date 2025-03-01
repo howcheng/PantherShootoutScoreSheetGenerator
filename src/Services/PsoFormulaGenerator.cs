@@ -420,7 +420,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		///   except when game was forfeited: if a team forfeits we have to enter the score as 1-0 and check the forfeit box, so that 1
 		///   shouldn't count as a goal conceded.
 		/// </returns>
-		public string GetGoalsAgainstTiebreakerFormula(string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		public string GetGoalsAgainstTiebreakerFormula(string teamSheetCell, Tuple<int, int> scoreEntryStartAndEndRowNums)
 		{
 			string formula = GetGoalCountFromTiebreakerSortSectionFormula(scoreEntryStartAndEndRowNums
 						, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_AGAINST_AWAY)
@@ -436,14 +436,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// </summary>
 		/// <param name="teamSheetCell"></param>
 		/// <param name="scoreEntryStartAndEndRowNums"></param>
-		/// <returns>=SUMIFS(AF$3:AF$12, A$3:A$12,"="&Shootout!A33, E$3:E$12, "<>TRUE")+SUMIFS(AG$3:AG$12, D$3:D$12,"="&Shootout!A33, E$3:E$12, "<>TRUE") - Z3
+		/// <returns>=SUMIFS(AF$3:AF$12, A$3:A$12,"="&Shootout!A33, {E$3:E$20, E$24:E$41}, "<>TRUE")+SUMIFS(AG$3:AG$12, D$3:D$12,"="&Shootout!A33, {E$3:E$20, E$24:E$41}, "<>TRUE") - Z3
 		/// = if any of the forfeit checkboxes are checked, then 0, otherwise sum of home goals tiebreaker column where home team = team name + 
 		///   sum of tiebreaker away goals column where away team = team name minus the number of goals allowed 
 		///   (GD not used when any game in the pool/division (in the case of 10 teams) has been decided by forfeit)
 		/// </returns>
-		public string GetGoalDifferentialTiebreakerFormula(string teamSheetCell, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		public string GetGoalDifferentialTiebreakerFormula(string teamSheetCell, Tuple<int, int> scoreEntryStartAndEndRowNums)
 		{
-			int startRow = scoreEntryStartAndEndRowNums.First().Item1;
+			int startRow = scoreEntryStartAndEndRowNums.Item1;
 			string goalsForFormula = GetGoalCountFromTiebreakerSortSectionFormula(scoreEntryStartAndEndRowNums
 				, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_FOR_HOME)
 				, _helper.GetColumnNameByHeader(Constants.HDR_TIEBREAKER_GOALS_FOR_AWAY)
@@ -455,32 +455,40 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			return $"=IF({noForfeitsFormula}, {goalsForFormula} - {goalsAgainstCell}, 0)";
 		}
 
-		private string GetGoalCountFromTiebreakerSortSectionFormula(IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums, string homeGoalsColName, string awayGoalsColName, string teamSheetCell, bool goalsFor, bool omitForfeits)
+		private string GetGoalCountFromTiebreakerSortSectionFormula(Tuple<int, int> scoreEntryStartAndEndRowNums, string homeGoalsColName, string awayGoalsColName, string teamSheetCell, bool goalsFor, bool omitForfeits)
 		{
-			int startRow = scoreEntryStartAndEndRowNums.First().Item1;
-			int endRow = scoreEntryStartAndEndRowNums.Last().Item2;
+			int startRow = scoreEntryStartAndEndRowNums.Item1;
+			int endRow = scoreEntryStartAndEndRowNums.Item2;
+			ScoreEntryColumns cols = new()
+		{
+				HomeGoalsColumnName = homeGoalsColName,
+				HomeTeamColumnName = _helper.HomeTeamColumnName,
+				AwayGoalsColumnName = awayGoalsColName,
+				AwayTeamColumnName = _helper.AwayTeamColumnName,
+			};
 			return omitForfeits
-				? GetGoalsFormulaOmittingForfeits(homeGoalsColName, awayGoalsColName, startRow, endRow, teamSheetCell, goalsFor)
-				: GetGoalsFormula(homeGoalsColName, awayGoalsColName, startRow, endRow, teamSheetCell, goalsFor);
+				? GetGoalsFormulaOmittingForfeits(cols, startRow, endRow, teamSheetCell, goalsFor)
+				: GetGoalsFormula(cols, startRow, endRow, teamSheetCell, goalsFor);
 		}
 
 		/// <summary>
-		/// This is a copy of <see cref="FormulaGenerator.GetGoalsFormula"/> with the addition of omitting forfeited games.
-		/// Used for the goals against tiebreaker column. A forfeit should count as 0 goals against.
+		/// Gets the formula for determining the number of goals scored or conceded, excluding games which have been forfeited
 		/// </summary>
-		private string GetGoalsFormulaOmittingForfeits(string homeGoalsColName, string awayGoalsColName, int startRowNum, int endRowNum, string firstTeamCell, bool goalsFor)
+		private string GetGoalsFormulaOmittingForfeits(ScoreEntryColumns scoreEntryColumns, int startRowNum, int endRowNum, string firstTeamCell, bool goalsFor)
 		{
-			string homeGoalsCellRange = Utilities.CreateCellRangeString(homeGoalsColName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			string awayGoalsCellRange = Utilities.CreateCellRangeString(awayGoalsColName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			string homeTeamsCellRange = GetFormulaForGameRangePerTeam(_helper.HomeTeamColumnName, startRowNum, endRowNum, firstTeamCell);
-			string awayTeamsCellRange = GetFormulaForGameRangePerTeam(_helper.AwayTeamColumnName, startRowNum, endRowNum, firstTeamCell);
-
-			string homeGoalsFormula = $"{(goalsFor ? homeGoalsCellRange : awayGoalsCellRange)}, {homeTeamsCellRange}";
-			string awayGoalsFormula = $"{(goalsFor ? awayGoalsCellRange : homeGoalsCellRange)}, {awayTeamsCellRange}";
+			string formula = GetGoalsFormula(scoreEntryColumns, startRowNum, endRowNum, firstTeamCell, goalsFor);
 
 			string forfeitCellRange = Utilities.CreateCellRangeString(_helper.ForfeitColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
-			string unlessForfeitFormula = $"{forfeitCellRange},\"<>TRUE\"";
-			return $"SUMIFS({homeGoalsFormula}, {unlessForfeitFormula})+SUMIFS({awayGoalsFormula}, {unlessForfeitFormula})";
+			string unlessForfeitFormula = $", {forfeitCellRange},\"<>TRUE\"";
+
+			// insert the unless forfeit formula into the goals formula
+			int firstParen = formula.IndexOf(')');
+			int lastParen = formula.LastIndexOf(')');
+			string part1 = formula.Substring(0, firstParen);
+			string part2 = formula.Substring(firstParen , lastParen - firstParen);
+			string part3 = formula.Substring(lastParen);
+			formula = string.Format("{0}{1}{2}{1}{3}", part1, unlessForfeitFormula, part2, part3);
+			return formula;
 		}
 	}
 }
