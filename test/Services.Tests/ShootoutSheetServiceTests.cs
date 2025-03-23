@@ -1,52 +1,11 @@
 ﻿using Google.Apis.Sheets.v4.Data;
 using GoogleSheetsHelper;
 using Microsoft.Extensions.Logging;
-using NuGet.Frameworks;
 
 namespace PantherShootoutScoreSheetGenerator.Services.Tests
 {
 	public class ShootoutSheetServiceTests
 	{
-		[Theory]
-		[InlineData(true)]
-		[InlineData(false)]
-		public void CanCreateShootoutWinnerRequest(bool forWinner)
-		{
-			// create some data
-			Fixture fixture = new Fixture();
-			const int QUANTITY = 4;
-			List<Team> teams = fixture.Build<Team>()
-				.With(x => x.DivisionName, ShootoutConstants.DIV_14UB) // 14UB was what Intellisense suggested *shrug emoji*
-				.CreateMany(QUANTITY)
-				.ToList();
-
-			ShootoutSheetService service = new ShootoutSheetService(Mock.Of<ISheetsClient>(), Mock.Of<ILogger<ShootoutSheetService>>());
-			const int START_ROW_IDX = 1;
-			Request request = service.CreateShootoutWinnerFormatRequest(teams, 12345, START_ROW_IDX, forWinner);
-
-			ConditionalFormatRule? rule = request.AddConditionalFormatRule?.Rule;
-			Assert.NotNull(rule);
-
-			GridRange range = rule!.Ranges.Single();
-			Assert.Equal(START_ROW_IDX, range.StartRowIndex);
-			Assert.Equal(QUANTITY + START_ROW_IDX, range.EndRowIndex);
-			Assert.Equal(0, range.StartColumnIndex);
-			Assert.Equal(6, range.EndColumnIndex);
-
-			Assert.Single(rule.BooleanRule.Condition.Values);		
-			ConditionValue condition = rule.BooleanRule.Condition.Values.Single();
-			Assert.Contains("$F2", condition.UserEnteredValue);
-			const int START_ROW_NUM = START_ROW_IDX + 1;
-			const int END_ROW_NUM = START_ROW_IDX + QUANTITY;
-			Assert.Contains($"$B${START_ROW_NUM}:$D${END_ROW_NUM}", condition.UserEnteredValue);
-
-			string additionalConditionCheck = $"$A${START_ROW_NUM}:$A${END_ROW_NUM}";
-			if (forWinner)
-				Assert.DoesNotContain(additionalConditionCheck, condition.UserEnteredValue);
-			else
-				Assert.Contains(additionalConditionCheck, condition.UserEnteredValue);
-		}
-
 		[Theory]
 		[InlineData(3, 2)]
 		[InlineData(3, 10)]
@@ -60,15 +19,14 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			GoogleSheetRow row = service.CreateTeamRow(team, firstTeamRowNum, rowIndex, TEAMS_COUNT);
 
 			int EXPECTED_START_ROW = rowIndex + 1;
-			string totalFormula = $"=SUM(B{EXPECTED_START_ROW}:D{EXPECTED_START_ROW})";
-			string rankFormula = $"=RANK(E{EXPECTED_START_ROW},E${firstTeamRowNum}:E${firstTeamRowNum + TEAMS_COUNT - 1})";
+			string totalFormula = $"=SUM(B{EXPECTED_START_ROW}:E{EXPECTED_START_ROW})";
 			Assert.Collection(row
 				, cell => Assert.Equal(team.TeamName, cell.StringValue)
 				, cell => Assert.Empty(cell.StringValue)
 				, cell => Assert.Empty(cell.StringValue)
 				, cell => Assert.Empty(cell.StringValue)
+				, cell => Assert.Empty(cell.StringValue)
 				, cell => Assert.Equal(totalFormula, cell.FormulaValue)
-				, cell => Assert.Equal(rankFormula, cell.FormulaValue)
 			);
 
 			Assert.Equal($"A{EXPECTED_START_ROW}", team.TeamSheetCell);
@@ -91,6 +49,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				Properties = fixture.Build<SheetProperties>()
 					.OmitAutoProperties()
 					.With(x => x.SheetId, () => fixture.Create<int>())
+					.With(x => x.GridProperties, new GridProperties())
 					.Create()
 			};
 
@@ -111,7 +70,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			mockClient.Setup(x => x.ExecuteRequests(It.Is<IEnumerable<Request>>(rqs => rqs.Count() > 1), It.IsAny<CancellationToken>())).Callback(updateCallback);
 
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
-			await service.GenerateSheet(allTeams);
+			ShootoutSheetConfig config = await service.GenerateSheet(allTeams);
 
 			// all teams should have a team sheet cell value
 			Assert.All(allTeams, div => Assert.All(div.Value, team => Assert.NotEmpty(team.TeamSheetCell)));
@@ -141,7 +100,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Action<GoogleSheetRow> assertSubheaderRow = row =>
 			{
 				string[] subheaderValues = row.Select(x => x.StringValue).ToArray();
-				subheaderValues.Should().BeEquivalentTo(ShootoutSheetService.HeaderRowColumns);
+				subheaderValues.Should().BeEquivalentTo(ShootoutSheetHelper.HeaderRowColumns3Rounds);
 				Assert.All(row, cell =>
 				{
 					Assert.NotNull(cell.GoogleBackgroundColor);
@@ -177,14 +136,15 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			IEnumerable<Request> formatRequests = updateRequests!.Where(rq => rq.AddConditionalFormatRule != null);
 			Assert.Equal(ShootoutConstants.DivisionNames.Count() * 2, formatRequests.Count());
 
-			Queue<int> expectedRowIndices = new Queue<int>(ShootoutConstants.DivisionNames.Select((div, idx) => idx * QUANTITY + (idx + 1) * 2));
+			IEnumerable<int> expectedRowIndices = ShootoutConstants.DivisionNames.Select((div, idx) => idx * QUANTITY + (idx + 1) * 2);
+			Queue<int> qExpectedRowIndices = new Queue<int>(expectedRowIndices);
 
 			Action<Request> assertConditionalFormatting = r => Assert.NotNull(r.AddConditionalFormatRule);
 			Assert.All(formatRequests, rq => assertConditionalFormatting(rq));
 
 			for (int i = 0; i < formatRequests.Count(); i += 2)
 			{
-				int expectedRowIdx = expectedRowIndices.Dequeue();
+				int expectedRowIdx = qExpectedRowIndices.Dequeue();
 				Request req1 = formatRequests.ElementAt(i);
 				Request req2 = formatRequests.ElementAt(i + 1);
 				Assert.Equal(expectedRowIdx, req1.AddConditionalFormatRule.Rule.Ranges.First().StartRowIndex);
@@ -193,7 +153,19 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			// verify the resize requests: 5 columns
 			IEnumerable<Request> resizeRequests = updateRequests!.Where(rq => rq.UpdateDimensionProperties != null);
-			Assert.Equal(ShootoutSheetService.HeaderRowColumns.Count() - 1, resizeRequests.Count());
+			Assert.Equal(ShootoutSheetHelper.HeaderRowColumns4Rounds.Length - 1, resizeRequests.Count());
+
+			// verify the shootout row numbers
+			Assert.Equal(allTeams.Count, config.ShootoutStartAndEndRows.Count());
+			for (int i = 0; i < config.ShootoutStartAndEndRows.Count(); i++)
+			{
+				int expectedRowIdx = expectedRowIndices.ElementAt(i);
+				int startRow = expectedRowIdx + 1;
+				int endRow = expectedRowIdx + QUANTITY;
+				Tuple<int, int> startAndEnd = config.ShootoutStartAndEndRows.ElementAt(i).Value;
+				Assert.Equal(startRow, startAndEnd.Item1);
+				Assert.Equal(endRow, startAndEnd.Item2);
+			}
 		}
 	}
 }

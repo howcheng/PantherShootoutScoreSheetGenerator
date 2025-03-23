@@ -1,4 +1,5 @@
-﻿using StandingsGoogleSheetsHelper;
+﻿using GoogleSheetsHelper;
+using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
@@ -26,7 +27,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	/// </summary>
 	public class PoolWinnersRankWithTiebreakerRequestCreator : StandingsRequestCreator
 	{
-		public PoolWinnersRankWithTiebreakerRequestCreator(FormulaGenerator formGen) 
+		public PoolWinnersRankWithTiebreakerRequestCreator(FormulaGenerator formGen)
 			: base(formGen, ShootoutConstants.HDR_POOL_WINNER_RANK)
 		{
 		}
@@ -37,6 +38,24 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			int startRowNum = config.StartGamesRowNum;
 			int endRowNum = config.StartGamesRowNum + config.RowCount - 1; // not using EndGamesRowNum here because the pool winners table isn't the same length as the standings table
 			return ((PsoFormulaGenerator)_formulaGenerator).GetPoolWinnersRankWithTiebreakerFormula(startRowNum, endRowNum);
+		}
+	}
+
+	public class ShootoutRankWithTiebreakerRequestCreator : StandingsRequestCreator
+	{
+		public ShootoutRankWithTiebreakerRequestCreator(FormulaGenerator formGen)
+			: base(formGen, Constants.HDR_RANK)
+		{
+		}
+
+		protected override string GenerateFormula(StandingsRequestCreatorConfig cfg)
+		{
+			ShootoutTiebreakerRequestCreatorConfig config = (ShootoutTiebreakerRequestCreatorConfig)cfg;
+			ShootoutSheetHelper helper = (ShootoutSheetHelper)_formulaGenerator.SheetHelper;
+			int startRowNum = config.StartGamesRowNum;
+			int endRowNum = config.StartGamesRowNum + config.RowCount - 1;
+			string standingsCol = Utilities.ConvertIndexToColumnName(helper.SortedStandingsListColumnIndex);
+			return ((ShootoutScoringFormulaGenerator)_formulaGenerator).GetShootoutRankFormula(config.FirstTeamsSheetCell, startRowNum, endRowNum, standingsCol);
 		}
 	}
 }

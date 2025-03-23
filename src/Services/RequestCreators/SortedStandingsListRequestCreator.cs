@@ -5,10 +5,63 @@ using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
+	public abstract class SortedStandingsListRequestCreatorBase
+	{
+		private readonly SheetHelper _helper;
+
+		protected SortedStandingsListRequestCreatorBase(SheetHelper helper)
+		{
+			_helper = helper;
+		}
+
+		protected UpdateRequest CreateSortedStandingsListRequest(string sheetName, string cellRange, int startRowNum, IEnumerable<Tuple<string, ListSortDirection>> sortColumns)
+		{
+			// column numbers for sorting are relative to the array, not the actual column numbers or indexes
+			// (i.e., if G3 is the first column in the array, then column G will be 1)
+
+			StringBuilder sb = new("=SORT(");
+			sb.Append(cellRange);
+			sb.Append(',');
+			bool first = true;
+			foreach (var item in sortColumns)
+			{
+				string col = item.Item1;
+				ListSortDirection dir = item.Item2;
+
+				int colNum = GetSortColumnNumber(col);
+				string sort = Utilities.CreateSortColumnReference(colNum, dir);
+				if (!first)
+					sb.Append(',');
+				sb.Append(sort);
+				first = false;
+			}
+			sb.Append(')');
+
+			UpdateRequest request = new(sheetName)
+			{
+				ColumnStart = ((IPsoSheetHelper)_helper).SortedStandingsListColumnIndex,
+				RowStart = startRowNum - 1,
+				Rows = new List<GoogleSheetRow>
+				{
+					new GoogleSheetRow
+					{
+						new GoogleSheetCell
+						{
+							FormulaValue = sb.ToString(),
+						}
+					}
+				},
+			};
+			return request;
+		}
+
+		protected abstract int GetSortColumnNumber(string columnHeader);
+	}
+
 	/// <summary>
 	/// Creates the sorted standings list, which applies the tiebreakers to the standings list
 	/// </summary>
-	public class SortedStandingsListRequestCreator : ISortedStandingsListRequestCreator
+	public class SortedStandingsListRequestCreator : SortedStandingsListRequestCreatorBase, ISortedStandingsListRequestCreator
 	{
 		private readonly DivisionSheetConfig _config;
 		private readonly PsoFormulaGenerator _formulaGenerator;
@@ -26,6 +79,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		};
 
 		public SortedStandingsListRequestCreator(FormulaGenerator formulaGenerator, DivisionSheetConfig config)
+			: base(formulaGenerator.SheetHelper)
 		{
 			_formulaGenerator = (PsoFormulaGenerator)formulaGenerator;
 			_helper = (PsoDivisionSheetHelper)_formulaGenerator.SheetHelper;
@@ -53,52 +107,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			// 5. fewest goals against (ascending)
 			// 6. biggest goal differential (descending)
 			// 7. KFTM winner (descending)
-			return CreateSortedStandingsListRequest(info, cellRange, startRowNum, s_sortColumns);
-		}
-
-		protected PoolPlayInfo CreateSortedStandingsListRequest(PoolPlayInfo info, string cellRange, int startRowNum, IEnumerable<Tuple<string, ListSortDirection>> sortColumns)
-		{
-			// column numbers for sorting are relative to the array, not the actual column numbers or indexes
-			// (i.e., if G3 is the first column in the array, then column G will be 1)
-
-			StringBuilder sb = new("=SORT(");
-			sb.Append(cellRange);
-			sb.Append(',');
-			bool first = true;
-			foreach (var item in sortColumns)
-			{
-				string col = item.Item1;
-				ListSortDirection dir = item.Item2;
-
-				int colNum = GetSortColumnNumber(col);
-				string sort = Utilities.CreateSortColumnReference(colNum, dir);
-				if (!first)
-					sb.Append(',');
-				sb.Append(sort);
-				first = false;
-			}
-			sb.Append(')');
-
-			UpdateRequest request = new(_config.DivisionName)
-			{
-				ColumnStart = _helper.SortedStandingsListColumnIndex,
-				RowStart = startRowNum - 1,
-				Rows = new List<GoogleSheetRow>
-				{
-					new GoogleSheetRow
-					{
-						new GoogleSheetCell
-						{
-							FormulaValue = sb.ToString(),
-						}
-					}
-				},
-			};
+			UpdateRequest request = CreateSortedStandingsListRequest(_config.DivisionName, cellRange, startRowNum, s_sortColumns);
 			info.UpdateValuesRequests.Add(request);
 			return info;
 		}
 
-		protected int GetSortColumnNumber(string columnHeader)
+		protected override int GetSortColumnNumber(string columnHeader)
 		{
 			int teamNameColNum = _helper.GetColumnIndexByHeader(Constants.HDR_TEAM_NAME);
 			int colNum = _helper.GetColumnIndexByHeader(columnHeader);

@@ -338,17 +338,17 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// - if any of the forfeit checkboxes are checked, then 0, otherwise the number of games won
 		///   (Wins not used as tiebreaker if any game in the pool/division (in case of 10 teams) has been forfeited)
 		/// </returns>
-		public string GetGamesWonTiebreakerFormula(int startRow, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		public string GetGamesWonTiebreakerFormula(int startRow, Tuple<int, int> scoreEntryStartAndEndRowNums)
 		{
 			string winsCell = Utilities.CreateCellReference(_helper.NumWinsColumnName, startRow);
 			string noForfeitFormula = GetEnsureNoForfeitsFormula(scoreEntryStartAndEndRowNums);
 			return $"=IF({noForfeitFormula}, {winsCell}, 0)";
 		}
 
-		private string GetEnsureNoForfeitsFormula(IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
+		private string GetEnsureNoForfeitsFormula(Tuple<int, int> scoreEntryStartAndEndRowNums)
 		{
 			string forfeitColumn = _helper.GetColumnNameByHeader(Constants.HDR_FORFEIT);
-			string cellRanges = GetCellRange(forfeitColumn, scoreEntryStartAndEndRowNums);
+			string cellRanges = Utilities.CreateCellRangeString(forfeitColumn, scoreEntryStartAndEndRowNums.Item1, scoreEntryStartAndEndRowNums.Item2, CellRangeOptions.FixRow);
 			return $"COUNTIF({cellRanges}, TRUE) = 0";
 		}
 
@@ -460,7 +460,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			int startRow = scoreEntryStartAndEndRowNums.Item1;
 			int endRow = scoreEntryStartAndEndRowNums.Item2;
 			ScoreEntryColumns cols = new()
-		{
+			{
 				HomeGoalsColumnName = homeGoalsColName,
 				HomeTeamColumnName = _helper.HomeTeamColumnName,
 				AwayGoalsColumnName = awayGoalsColName,
@@ -477,7 +477,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private string GetGoalsFormulaOmittingForfeits(ScoreEntryColumns scoreEntryColumns, int startRowNum, int endRowNum, string firstTeamCell, bool goalsFor)
 		{
 			string formula = GetGoalsFormula(scoreEntryColumns, startRowNum, endRowNum, firstTeamCell, goalsFor);
-
+			
 			string forfeitCellRange = Utilities.CreateCellRangeString(_helper.ForfeitColumnName, startRowNum, endRowNum, CellRangeOptions.FixRow);
 			string unlessForfeitFormula = $", {forfeitCellRange},\"<>TRUE\"";
 

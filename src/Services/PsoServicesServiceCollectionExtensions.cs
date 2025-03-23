@@ -132,5 +132,26 @@ namespace Microsoft.Extensions.DependencyInjection
 
 			return services;
 		}
+
+		public static IServiceCollection AddShootoutScoreEntryServices(this IServiceCollection services, ShootoutSheetConfig config, DivisionSheetConfig divisionConfig)
+		{
+			services.AddSingleton<IShootoutScoreEntryRequestsCreator, ShootoutScoreEntryRequestsCreator>();
+			services.AddSingleton(config);
+			services.AddSingleton<StandingsSheetHelper, ShootoutSheetHelper>();
+			services.AddSingleton<PsoDivisionSheetHelper>();
+			services.AddSingleton<DivisionSheetConfig>(divisionConfig); // need to register this as the base type
+
+			services.AddSingleton<IStandingsRequestCreatorFactory, StandingsRequestCreatorFactory>();
+			services.AddSingleton<FormulaGenerator, ShootoutScoringFormulaGenerator>();
+			services.AddSingleton<IStandingsRequestCreator, ShootoutScoringShortTeamNameRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, ShootoutScoringGoalsAgainstTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, KicksFromTheMarkTiebreakerRequestCreator>();
+			services.AddSingleton<IStandingsRequestCreator, ShootoutRankWithTiebreakerRequestCreator>();
+
+			services.AddSingleton<IShootoutSortedStandingsListRequestCreator, ShootoutSortedStandingsListRequestCreator>();
+			services.AddSingleton<IShootoutScoreEntryService, ShootoutScoreEntryService>();
+
+			return services;
+		}
 	}
 }

@@ -41,7 +41,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected const string END_STANDINGS_COL = Constants.HDR_GOAL_DIFF;
 
-		public async Task CreateSheet(ShootoutSheetConfig shootoutSheetConfig)
+		public async Task<PoolPlayInfo> CreateSheet(ShootoutSheetConfig shootoutSheetConfig)
 		{
 			_log.LogInformation($"Beginning sheet for {DivisionName}...");
 			if (!SheetId.HasValue)
@@ -92,6 +92,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			SheetRequests winnerRequests = _winnerFormattingRequestCreator.CreateWinnerFormattingRequests(championship);
 			await _sheetsClient.Update(winnerRequests.UpdateValuesRequests);
 			await _sheetsClient.ExecuteRequests(winnerRequests.UpdateSheetRequests);
+
+			return poolPlay;
 		}
 	}
 }

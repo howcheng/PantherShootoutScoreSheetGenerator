@@ -4,6 +4,6 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public interface IDivisionSheetGenerator
 	{
-		Task CreateSheet(ShootoutSheetConfig shootoutSheetConfig);
+		Task<PoolPlayInfo> CreateSheet(ShootoutSheetConfig shootoutSheetConfig);
 	}
 }

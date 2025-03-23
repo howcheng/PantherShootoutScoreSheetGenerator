@@ -204,14 +204,15 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			// verify the legend
 			Assert.Single(requests.UpdateValuesRequests);
-			Assert.Equal(4, requests.UpdateValuesRequests.Single().Rows.Count); // one row per rank
-			Assert.All(requests.UpdateValuesRequests.Single().Rows, row => Assert.Equal(2, row.Count)); // 2 cells per row: one for the ordinal value and one for the color
+			UpdateRequest legendUpdateRequest = requests.UpdateValuesRequests.Single();
+			Assert.Equal(4, legendUpdateRequest.Rows.Count); // one row per rank
+			Assert.All(legendUpdateRequest.Rows, row => Assert.Equal(2, row.Count)); // 2 cells per row: one for the ordinal value and one for the color
 			Action<GoogleSheetCell, int> assertLegendColor = (cell, rank) =>
 			{
 				Assert.NotNull(cell.GoogleBackgroundColor);
 				Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.GetColorForRank(rank)));
 			};
-			Assert.Collection(requests.UpdateValuesRequests.Single().Rows
+			Assert.Collection(legendUpdateRequest.Rows
 				, row => assertLegendColor(row.Last(), 1)
 				, row => assertLegendColor(row.Last(), 2)
 				, row => assertLegendColor(row.Last(), 3)

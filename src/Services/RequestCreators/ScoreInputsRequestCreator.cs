@@ -11,11 +11,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private readonly PsoDivisionSheetHelper _helper;
 		private readonly IStandingsRequestCreatorFactory _requestCreatorFactory;
 
-		public ScoreInputsRequestCreator(DivisionSheetConfig config, PsoDivisionSheetHelper helper, IStandingsRequestCreatorFactory factory)
+		public ScoreInputsRequestCreator(DivisionSheetConfig config, StandingsSheetHelper helper, IStandingsRequestCreatorFactory factory)
 		{
 			_divisionName = config.DivisionName;
 			_config = config;
-			_helper = helper;
+			_helper = (PsoDivisionSheetHelper)helper;
 			_requestCreatorFactory = factory;
 		}
 

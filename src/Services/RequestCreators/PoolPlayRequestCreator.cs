@@ -1,7 +1,7 @@
 ﻿namespace PantherShootoutScoreSheetGenerator.Services
 {
 	/// <summary>
-	/// 
+	/// Creates the requests to build the score entry fields, the standings table, and the championship enty fields on the division sheet
 	/// </summary>
 	public class PoolPlayRequestCreator : IPoolPlayRequestCreator
 	{
@@ -34,18 +34,20 @@
 
 				// standings table
 				info = _standingsTableRequestCreator.CreateStandingsRequests(info, pool, startRowIndex + 1);
-				int standingsStartRowNum = startRowIndex + 2;
-				int standingsEndRowNum = standingsStartRowNum + _config.TeamsPerPool - 1; // -1 because A3:A6 is 4 rows
-				Tuple<int, int> standingsStartAndEnd = new Tuple<int, int>(standingsStartRowNum, standingsEndRowNum);
-				info.StandingsStartAndEndRowNums.Add(standingsStartAndEnd);
+				int standingsStartRowNum = info.StandingsStartAndEndRowNums.Last().Item1; // this was set in the standings table request creator
 
+				List<Tuple<int, int>> scoringStartAndEndRows = new(_config.NumberOfGameRounds);
+				info.ScoreEntryStartAndEndRowNums.Add(pool.Key, scoringStartAndEndRows);
 				// scoring rows
 				for (int i = 0; i < _config.NumberOfGameRounds; i++)
 				{
+					int scoringStartRow = startRowIndex + 2; // +1 for label row, +1 to convert from index
+					int scoringEndRow = scoringStartRow + _config.GamesPerRound - 1;
 					info = _inputsRequestCreator.CreateScoringRequests(info, pool, i + 1, ref startRowIndex);
+					Tuple<int, int> scoringStartAndEnd = new(scoringStartRow, scoringEndRow);
+					scoringStartAndEndRows.Add(scoringStartAndEnd);
 				}
-				info.ScoreEntryStartAndEndRowNums.Add(new Tuple<int, int>(standingsStartRowNum, startRowIndex - 1)); // -1 because of the blank line inserted at the end of each round
-
+				
 				// tiebreaker columns
 				info = _tiebreakersRequestCreator.CreateTiebreakerRequests(info, pool, standingsStartRowNum - 1);
 

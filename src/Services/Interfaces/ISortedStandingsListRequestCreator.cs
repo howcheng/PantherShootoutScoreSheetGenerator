@@ -1,4 +1,6 @@
-﻿namespace PantherShootoutScoreSheetGenerator.Services
+﻿using GoogleSheetsHelper;
+
+namespace PantherShootoutScoreSheetGenerator.Services
 {
 	public interface ISortedStandingsListRequestCreator
 	{
@@ -12,5 +14,10 @@
 
 	public interface IPoolWinnersSortedStandingsListRequestCreator : ISortedStandingsListRequestCreator
 	{
+	}
+
+	public interface IShootoutSortedStandingsListRequestCreator
+	{
+		UpdateRequest CreateSortedStandingsListRequest(Tuple<int, int> shootoutStartAndEndRows);
 	}
 }

@@ -8,7 +8,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
     /// <remarks>
     /// A separate instance must be created for each division because <see cref="_teamsPerPool"/> will vary!
     /// </remarks>
-    public class PsoDivisionSheetHelper : StandingsSheetHelper
+    public class PsoDivisionSheetHelper : StandingsSheetHelper, IPsoSheetHelper
     {
         private readonly int _teamsPerPool;
 

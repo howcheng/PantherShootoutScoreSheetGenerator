@@ -7,6 +7,7 @@ using PantherShootoutScoreSheetGenerator.Services;
 using GoogleOAuthCliClient;
 using GoogleSheetsHelper;
 using Google.Apis.Sheets.v4;
+using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 {
@@ -15,7 +16,7 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 		private static IConfigurationRoot? Configuration;
 		private static GoogleCredential? GoogleCredential;
 
-		static async Task Main(string[] args)
+		private static async Task Main(string[] args)
 		{
 			string? outputPath = Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().Location).LocalPath);
 			Configuration = new ConfigurationBuilder()
@@ -26,7 +27,55 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			await Run();
 		}
 
-		static IServiceProvider BuildSharedServices(AppSettings settings)
+		private static async Task Run()
+		{
+			AppSettings settings = new AppSettings();
+			Configuration!.GetSection(nameof(AppSettings)).Bind(settings);
+
+			IServiceProvider sharedProvider = BuildSharedServices(settings);
+
+			// do OAuth first because we need to get the GoogleCredential
+			IOAuthChecker checker = sharedProvider.GetRequiredService<IOAuthChecker>();
+			if (await checker.IsOAuthRequired())
+				await checker.DoOAuth();
+
+			// load the credential
+			GoogleCredential = GoogleCredential.FromAccessToken(checker.AccessToken);
+
+			// build the service provider to read the teams and create the document
+			IServiceProvider provider = BuildServiceProviderForDocument(settings);
+
+			// read data and create the team list/shootout sheet
+			ITeamReaderService teamReader = provider.GetRequiredService<ITeamReaderService>();
+			IDictionary<string, IEnumerable<Team>> teams = teamReader.GetTeams();
+
+			// create the spreadsheet
+			ISheetsClient sheetsClient = provider.GetRequiredService<ISheetsClient>();
+			await sheetsClient.CreateSpreadsheet($"{DateTime.Today.Year} Panther Shootout scores");
+			ILogger<Program> logger = provider.GetRequiredService<ILogger<Program>>();
+			logger.LogInformation("Spreadsheet ID {id} created", sheetsClient.SpreadsheetId);
+
+			IShootoutSheetService shootoutSheetService = provider.GetRequiredService<IShootoutSheetService>();
+			ShootoutSheetConfig config = await shootoutSheetService.GenerateSheet(teams);
+
+			// loop thru the divisions
+			foreach (KeyValuePair<string, IEnumerable<Team>> pair in teams)
+			{
+				// build the provider for the division and create the sheet
+				IServiceProvider divisionSheetProvider = BuildServiceProviderForDivisionSheet(provider, pair.Value, config);
+				IDivisionSheetGenerator creator = divisionSheetProvider.GetRequiredService<IDivisionSheetGenerator>();
+				PoolPlayInfo pool = await creator.CreateSheet(config);
+
+				// build the provider for the division and add the score entry section to the Shootout sheet
+				IServiceProvider shootoutScoreProvider = BuildServiceProviderForShootoutScoreEntry(provider, config, config.DivisionConfigs[pair.Key]);
+				IShootoutScoreEntryService scoreEntryService = shootoutScoreProvider.GetRequiredService<IShootoutScoreEntryService>();
+				await scoreEntryService.CreateShootoutScoreEntrySection(pool);
+			}
+
+			logger.LogInformation("All done!");
+		}
+
+		private static IServiceProvider BuildSharedServices(AppSettings settings)
 		{
 			IServiceCollection services = new ServiceCollection();
 			services.AddOptions();
@@ -46,38 +95,9 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			return services.BuildServiceProvider();
 		}
 
-		static IServiceProvider BuildServiceProvider(IServiceProvider provider, IEnumerable<Team> divisionTeams, ShootoutSheetConfig config)
+		private static IServiceProvider BuildServiceProviderForDocument(AppSettings settings)
 		{
-			IServiceCollection services = new ServiceCollection();
-			services.AddLogging(builder =>
-			{
-				builder.ClearProviders();
-				builder.AddDebug();
-				builder.AddConsole();
-			});
-			services.AddSingleton(provider.GetRequiredService<AppSettings>());
-			services.AddSingleton(provider.GetRequiredService<ISheetsClient>());
-			services.AddPantherShootoutServices(divisionTeams, config);
-			return services.BuildServiceProvider();
-		}
-
-		static async Task Run()
-		{
-			AppSettings settings = new AppSettings();
-			Configuration!.GetSection(nameof(AppSettings)).Bind(settings);
-
-			IServiceProvider sharedProvider = BuildSharedServices(settings);
-
-			// do OAuth first because we need to get the GoogleCredential
-			IOAuthChecker checker = sharedProvider.GetRequiredService<IOAuthChecker>();
-			if (await checker.IsOAuthRequired())
-				await checker.DoOAuth();
-
-			// load the credential
-			GoogleCredential = GoogleCredential.FromAccessToken(checker.AccessToken);
-
-			// build the service provider to read the teams and create the document
-			IServiceCollection services = new ServiceCollection();
+			ServiceCollection services = new ServiceCollection();
 			services.AddLogging(builder =>
 			{
 				builder.ClearProviders();
@@ -90,31 +110,40 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			services.AddSingleton<ITeamReaderService, TeamReaderService>();
 			services.AddSingleton<IFileReader, FileReader>();
 			services.AddSingleton<IShootoutSheetService, ShootoutSheetService>();
+
 			IServiceProvider provider = services.BuildServiceProvider();
+			return provider;
+		}
 
-			// read data and create the team list/shootout sheet
-			ITeamReaderService teamReader = provider.GetRequiredService<ITeamReaderService>();
-			IDictionary<string, IEnumerable<Team>> teams = teamReader.GetTeams();
-
-			// create the spreadsheet
-			ISheetsClient sheetsClient = provider.GetRequiredService<ISheetsClient>();
-			await sheetsClient.CreateSpreadsheet($"{DateTime.Today.Year} Panther Shootout scores");
-			ILogger<Program> logger = provider.GetRequiredService<ILogger<Program>>();
-			logger.LogInformation("Spreadsheet ID {id} created", sheetsClient.SpreadsheetId);
-
-			IShootoutSheetService shootoutSheetService = provider.GetRequiredService<IShootoutSheetService>();
-			ShootoutSheetConfig config = await shootoutSheetService.GenerateSheet(teams);
-
-			// loop thru the divisions
-			foreach (KeyValuePair<string, IEnumerable<Team>> pair in teams)
+		private static IServiceProvider BuildServiceProviderForDivisionSheet(IServiceProvider provider, IEnumerable<Team> divisionTeams, ShootoutSheetConfig config)
+		{
+			ServiceCollection services = new ServiceCollection();
+			services.AddLogging(builder =>
 			{
-				// build the provider for the division and create the sheet
-				IServiceProvider divisionSheetProvider = BuildServiceProvider(provider, pair.Value, config);
-				IDivisionSheetGenerator creator = divisionSheetProvider.GetRequiredService<IDivisionSheetGenerator>();
-				await creator.CreateSheet();
-			}
+				builder.ClearProviders();
+				builder.AddDebug();
+				builder.AddConsole();
+			});
+			services.AddSingleton(provider.GetRequiredService<AppSettings>());
+			services.AddSingleton(provider.GetRequiredService<ISheetsClient>());
+			services.AddPantherShootoutServices(divisionTeams, config);
+			return services.BuildServiceProvider();
+		}
 
-			logger.LogInformation("All done!");
+		private static IServiceProvider BuildServiceProviderForShootoutScoreEntry(IServiceProvider provider, ShootoutSheetConfig config, DivisionSheetConfig divisionConfig)
+		{
+			ServiceCollection services = new ServiceCollection();
+			services.AddLogging(builder =>
+			{
+				builder.ClearProviders();
+				builder.AddDebug();
+				builder.AddConsole();
+			});
+			services.AddSingleton(provider.GetRequiredService<AppSettings>());
+			services.AddSingleton(provider.GetRequiredService<ISheetsClient>());
+			services.AddShootoutScoreEntryServices(config, divisionConfig);
+
+			return services.BuildServiceProvider();
 		}
 	}
 }

@@ -42,6 +42,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 			int startGamesRowNum = startRowIndex + 1; // first row in first round is 3
 			int endGamesRowNum = GetEndGamesInPoolRowNumber(_config, startGamesRowNum);
+			int endStandingsRowNum = startGamesRowNum + _config.TeamsPerPool - 1; // -1 because A3:A6 is 4 rows
+			info.StandingsStartAndEndRowNums.Add(new(startGamesRowNum, endStandingsRowNum));
 
 			// standings table
 			foreach (string hdr in _helper.StandingsTableColumns)

@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Text;
 using GoogleSheetsHelper;
-using Polly;
 using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
@@ -9,9 +8,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	/// <summary>
 	/// Creates the pool-winners sorted standings lists for a 12-team division, which applies the tiebreakers to the standings list
 	/// </summary>
-	public class PoolWinnersSortedStandingsListRequestCreator : SortedStandingsListRequestCreator, IPoolWinnersSortedStandingsListRequestCreator
+	public sealed class PoolWinnersSortedStandingsListRequestCreator : SortedStandingsListRequestCreator, IPoolWinnersSortedStandingsListRequestCreator
 	{
 		private readonly List<Tuple<string, ListSortDirection>> _sortColumns = new();
+		private readonly DivisionSheetConfig _config;
 
 		public PoolWinnersSortedStandingsListRequestCreator(FormulaGenerator formulaGenerator, DivisionSheetConfig config) 
 			: base(formulaGenerator, config)
@@ -20,6 +20,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			// we aren't using the head-to-head tiebreaker
 			// and although we are not using the KTFM tiebreaker, we're replacing it with the pool-winners tiebreaker box, so it's in the same place
 			_sortColumns.Remove(_sortColumns.Single(x => x.Item1 == Constants.HDR_TIEBREAKER_H2H));
+			_config = config;
 		}
 
 		public override PoolPlayInfo CreateSortedStandingsListRequest(PoolPlayInfo info)
@@ -75,7 +76,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			sb.Append('}');
 
 			string combinedRange = sb.ToString();
-			return CreateSortedStandingsListRequest(info, combinedRange, startRowNum, _sortColumns);
+			UpdateRequest request = CreateSortedStandingsListRequest(_config.DivisionName, combinedRange, startRowNum, _sortColumns);
+			info.UpdateValuesRequests.Add(request);
+			return info;
 		}
 	}
 }
