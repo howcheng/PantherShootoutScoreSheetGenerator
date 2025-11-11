@@ -18,7 +18,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		{
 			_sortColumns = s_sortColumns;
 			// we aren't using the head-to-head tiebreaker
-			// and although we are not using the KTFM tiebreaker, we're replacing it with the pool-winners tiebreaker box, so it's in the same place
+			// and although we are not using the KFTM tiebreaker, we're replacing it with the pool-winners tiebreaker box, so it's in the same place
 			_sortColumns.Remove(_sortColumns.Single(x => x.Item1 == Constants.HDR_TIEBREAKER_H2H));
 			_config = config;
 		}

@@ -32,10 +32,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		public UpdateRequest CreateSortedStandingsListRequest(Tuple<int, int> shootoutStartAndEndRows)
 		{
 			// =SORT({A3:A12,F3:F12,AA3:AA12,AB3:AB12},2,false,3,true,4,false)
-			// sort array of team names, total points, goals against, and KTFM tiebreaker by
+			// sort array of team names, total points, goals against, and KFTM tiebreaker by
 			// 1. points (descending)
 			// 2, fewest goals against (ascending)
-			// 3. KTFM winner (descending)
+			// 3. KFTM winner (descending)
 
 			int startRowNum = shootoutStartAndEndRows.Item1;
 			int endRowNum = shootoutStartAndEndRows.Item2;

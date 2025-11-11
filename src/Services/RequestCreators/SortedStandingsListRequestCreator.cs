@@ -98,7 +98,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 		protected PoolPlayInfo CreateSortedStandingsListRequest(PoolPlayInfo info, string cellRange, int startRowNum)
 		{
-			// for Boolean columns (H2H, KTFM), FALSE comes before TRUE, so those should be sorted descending
+			// for Boolean columns (H2H, KFTM), FALSE comes before TRUE, so those should be sorted descending
 			// sort rules:
 			// 1. most game points (descending)
 			// 2. head-to-head tiebreaker (descending)
