@@ -93,7 +93,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			await _sheetsClient.Update(winnerRequests.UpdateValuesRequests);
 			await _sheetsClient.ExecuteRequests(winnerRequests.UpdateSheetRequests);
 
-			return poolPlay;
+			// Return ChampionshipInfo (which extends PoolPlayInfo) so shootout score entry can access championship game rows
+			return championship;
 		}
 	}
 }

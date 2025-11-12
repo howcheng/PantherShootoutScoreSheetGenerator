@@ -52,12 +52,16 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	{
 		public int ChampionshipGameRowNum { get; set; }
 		public int ThirdPlaceGameRowNum { get; set; }
+		public int ConsolationGameRowNum { get; set; }
+		public int Semifinal1RowNum { get; set; }
+		public int Semifinal2RowNum { get; set; }
 
 		public ChampionshipInfo(PoolPlayInfo poolPlayInfo)
 			: base()
 		{
 			Pools = poolPlayInfo.Pools;
 			StandingsStartAndEndRowNums = poolPlayInfo.StandingsStartAndEndRowNums;
+			ScoreEntryStartAndEndRowNums = poolPlayInfo.ScoreEntryStartAndEndRowNums;
 			ChampionshipStartRowIndex = poolPlayInfo.ChampionshipStartRowIndex;
 		}
 

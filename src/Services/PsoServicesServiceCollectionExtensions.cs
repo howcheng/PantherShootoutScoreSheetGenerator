@@ -135,7 +135,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
 		public static IServiceCollection AddShootoutScoreEntryServices(this IServiceCollection services, ShootoutSheetConfig config, DivisionSheetConfig divisionConfig)
 		{
-			services.AddSingleton<IShootoutScoreEntryRequestsCreator, ShootoutScoreEntryRequestsCreator>();
+			// Register the appropriate score entry creator based on team count
+			Type scoreEntryCreatorType = divisionConfig.NumberOfTeams == 6
+				? typeof(ShootoutScoreEntryRequestsCreator6Teams)
+				: typeof(ShootoutScoreEntryRequestsCreator);
+			services.AddSingleton(typeof(IShootoutScoreEntryRequestsCreator), scoreEntryCreatorType);
+			
 			services.AddSingleton(config);
 			services.AddSingleton<StandingsSheetHelper, ShootoutSheetHelper>();
 			services.AddSingleton<PsoDivisionSheetHelper>();

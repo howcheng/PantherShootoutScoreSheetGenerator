@@ -22,7 +22,8 @@
 			switch (numTeams)
 			{
 				case 6:
-					NumberOfGameRounds = NumberOfShootoutRounds = 3;
+					NumberOfGameRounds = 3;
+					NumberOfShootoutRounds = 4; // 4 rounds on shootout sheet: 3 pool play + 1 championship
 					GamesPerRound = 1;
 					TeamsPerPool = 3;
 					break;

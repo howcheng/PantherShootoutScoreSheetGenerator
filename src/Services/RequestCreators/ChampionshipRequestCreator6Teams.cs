@@ -41,6 +41,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			homeFormula = CreateSemifinalFormula(3, info.StandingsStartAndEndRowNums.First().Item1, info.StandingsStartAndEndRowNums.First().Item2);
 			awayFormula = CreateSemifinalFormula(3, info.StandingsStartAndEndRowNums.Last().Item1, info.StandingsStartAndEndRowNums.Last().Item2);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
+			ret.ConsolationGameRowNum = startRowIndex + 1; // Save the consolation game row number
 			startRowIndex += 1; // this is now the subheader label for the semifinals
 
 			// semifinals: 1st place from pool 1 vs 2nd place from pool 2 (and vice versa)
@@ -51,21 +52,23 @@ namespace PantherShootoutScoreSheetGenerator.Services
 
 			CreateSemifinalFormulas(info, true, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
+			ret.Semifinal1RowNum = semi1RowNum;
 			startRowIndex += 1; // this is now the 2nd scores row for the semifinals
 			int semi2RowNum = startRowNum += 1;
 
 			CreateSemifinalFormulas(info, false, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
+			ret.Semifinal2RowNum = semi2RowNum;
 			startRowIndex += 1; // this is now the subheader label for the 3rd-place game
 			startRowNum += 1;
 
 			// 3rd-place game
 			updateRequests.Add(CreateChampionshipHeaderRow(startRowIndex, "3RD-PLACE GAME"));
-			startRowIndex += 1; // this is now the scores row for the 3rd-place gmae
+			startRowIndex += 1; // this is now the scores row for the 3rd-place game
 			startRowNum += 1;
 			CreateFinalFormulas(semi1RowNum, semi2RowNum, false, out homeFormula, out awayFormula);
 			updateRequests.Add(CreateChampionshipGameRequests(startRowIndex, homeFormula, awayFormula));
-			ret.ThirdPlaceGameRowNum = startRowNum;
+			ret.ThirdPlaceGameRowNum = startRowNum; // This is the actual 3rd place game (no shootout)
 			startRowIndex += 1; // this is now the subheader label for the championship
 			startRowNum += 1;
 
