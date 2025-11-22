@@ -4,8 +4,6 @@ using StandingsGoogleSheetsHelper;
 
 namespace PantherShootoutScoreSheetGenerator.Services
 {
-	// TODO: need a 6-team version
-
 	/// <summary>
 	/// Creates the requests to build the scoring entry section of the Shootout sheet (score entry, tiebreakers, and sorted standings)
 	/// </summary>
