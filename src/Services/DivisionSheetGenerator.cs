@@ -17,12 +17,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		private readonly IPoolPlayRequestCreator _poolPlayRequestCreator;
 		private readonly IChampionshipRequestCreator _championshipRequestCreator;
 		private readonly IWinnerFormattingRequestsCreator _winnerFormattingRequestCreator;
+		private readonly IColumnVisibilityHelper _columnVisibilityHelper;
 		private readonly ILogger<DivisionSheetGenerator> _log;
 
 		public PsoDivisionSheetHelper Helper { get; private set; }
 
 		public DivisionSheetGenerator(DivisionSheetConfig config, ISheetsClient sheetsClient, FormulaGenerator fg
 			, IPoolPlayRequestCreator poolPlayCreator, IChampionshipRequestCreator championshipCreator, IWinnerFormattingRequestsCreator winnerFormatCreator
+			, IColumnVisibilityHelper columnVisibilityHelper
 			, ILogger<DivisionSheetGenerator> log
 			, IEnumerable<Team> divisionTeams)
 		{
@@ -34,6 +36,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_poolPlayRequestCreator = poolPlayCreator;
 			_championshipRequestCreator = championshipCreator;
 			_winnerFormattingRequestCreator = winnerFormatCreator;
+			_columnVisibilityHelper = columnVisibilityHelper;
 			_log = log;
 
 			_divisionTeams = divisionTeams;
@@ -92,6 +95,12 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			SheetRequests winnerRequests = _winnerFormattingRequestCreator.CreateWinnerFormattingRequests(championship);
 			await _sheetsClient.Update(winnerRequests.UpdateValuesRequests);
 			await _sheetsClient.ExecuteRequests(winnerRequests.UpdateSheetRequests);
+
+			// Hide helper columns (H2H tiebreakers, main tiebreakers, winner/points, sorted standings list)
+			int startHideColumn = Helper.LastVisibleColumnIndex + 1;
+			int endHideColumn = Helper.SortedStandingsListColumnIndex + _divisionTeams.Count(); // +teams count for sorted list width
+			IList<Request> hideColumnsRequests = _columnVisibilityHelper.CreateHideColumnsRequest(SheetId, startHideColumn, endHideColumn);
+			await _sheetsClient.ExecuteRequests(hideColumnsRequests);
 
 			// Return ChampionshipInfo (which extends PoolPlayInfo) so shootout score entry can access championship game rows
 			return championship;

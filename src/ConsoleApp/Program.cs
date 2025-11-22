@@ -72,6 +72,9 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 				await scoreEntryService.CreateShootoutScoreEntrySection(pool);
 			}
 
+			// Hide helper columns on the Shootout sheet after all divisions are complete
+			await shootoutSheetService.HideHelperColumns(config);
+
 			logger.LogInformation("All done!");
 		}
 

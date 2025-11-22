@@ -132,5 +132,27 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			};
 			return teamRow;
 		}
+
+		/// <summary>
+		/// Hides the helper columns (score entry, tiebreakers, sorted standings list) on the Shootout sheet
+		/// </summary>
+		/// <param name="config">The shootout sheet configuration</param>
+		public async Task HideHelperColumns(ShootoutSheetConfig config)
+		{
+			_logger.LogInformation("Hiding helper columns on Shootout sheet");
+
+			// Get any division config to determine the structure (they all have the same column layout)
+			DivisionSheetConfig anyDivisionConfig = config.DivisionConfigs.Values.First();
+			ShootoutSheetHelper helper = new ShootoutSheetHelper(anyDivisionConfig);
+			IColumnVisibilityHelper columnVisibilityHelper = new ColumnVisibilityHelper();
+
+			// Calculate the range to hide: everything after the RANK column through the end of the sorted standings list
+			int startHideColumn = helper.LastVisibleColumnIndex + 1;
+			// The sorted standings list width equals the number of teams in the division
+			int endHideColumn = helper.SortedStandingsListColumnIndex + anyDivisionConfig.NumberOfTeams;
+
+			IList<Request> hideColumnsRequests = columnVisibilityHelper.CreateHideColumnsRequest(config.SheetId, startHideColumn, endHideColumn);
+			await _sheetsClient.ExecuteRequests(hideColumnsRequests);
+		}
 	}
 }

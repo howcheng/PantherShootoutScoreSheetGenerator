@@ -1,5 +1,5 @@
 ﻿# PantherShootoutScoreSheetGenerator
-This console application generates a Google Sheet for entering scores for Region 42's Panther Shooutout tournament
+This console application generates a Google Sheet for entering scores for Region 42's Panther Shooutout tournament. The entire spreadsheet is created programmatically using the Google Sheets API. The document is then published to the web and embedded in the Region 42 website for tournament participants to view. Tournament staff use the file directly to enter scores during the event.
 
 ## Steps to follow every year
 1. Create a CSV file of the teams (see an example in the Services.Tests project)

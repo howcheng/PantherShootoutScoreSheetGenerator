@@ -6,6 +6,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 {
 	public class ShootoutSheetServiceTests
 	{
+		private const int TEST_TEAMS_PER_DIVISION = 4;
+
 		[Theory]
 		[InlineData(3, 2)]
 		[InlineData(3, 10)]
@@ -33,15 +35,291 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		}
 
 		[Fact]
-		public async Task TestGenerateSheet()
+		public async Task GenerateSheet_SetsTeamSheetCellForAllTeams()
 		{
-			// create some data: 4 teams per division
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.All(allTeams, div => Assert.All(div.Value, team => Assert.NotEmpty(team.TeamSheetCell)));
+		}
+
+		[Fact]
+		public async Task GenerateSheet_RenamesSheetToShootoutSheetName()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			List<IEnumerable<Request>> allCapturedRequests = new List<IEnumerable<Request>>();
+			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>()))
+				.Callback<IEnumerable<Request>, CancellationToken>((rqs, ct) => allCapturedRequests.Add(rqs));
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			// Find the single-request batch that renames the sheet
+			IEnumerable<Request>? renameRequest = allCapturedRequests.FirstOrDefault(batch => 
+				batch.Count() == 1 && batch.First().UpdateSheetProperties != null);
+			Assert.NotNull(renameRequest);
+			Assert.Equal(ShootoutConstants.SHOOTOUT_SHEET_NAME, renameRequest!.First().UpdateSheetProperties.Properties.Title);
+		}
+
+		[Fact]
+		public async Task GenerateSheet_CreatesCorrectNumberOfAppendRequests()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			IList<AppendRequest>? capturedAppendRequests = null;
+			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
+				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.NotNull(capturedAppendRequests);
+			Assert.Equal(allTeams.Count, capturedAppendRequests!.Count);
+			Assert.All(capturedAppendRequests!, rq => Assert.Equal(2 + TEST_TEAMS_PER_DIVISION, rq.Rows.Count)); // 1 row per team + 2 header rows
+		}
+
+		[Fact]
+		public async Task GenerateSheet_CreatesHeaderRowsWithCorrectFormatting()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			IList<AppendRequest>? capturedAppendRequests = null;
+			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
+				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.NotNull(capturedAppendRequests);
+			foreach (var (request, division) in capturedAppendRequests!.Zip(allTeams.Keys))
+			{
+				GoogleSheetRow headerRow = request.Rows.First();
+				
+				// Verify header row content
+				Assert.Equal(division, headerRow.First().StringValue);
+				Assert.All(headerRow.Skip(1), cell =>
+				{
+					Assert.IsType<string>(cell.CellValue);
+					Assert.Empty(cell.StringValue);
+				});
+
+				// Verify header row formatting
+				Assert.All(headerRow, cell =>
+				{
+					Assert.NotNull(cell.GoogleBackgroundColor);
+					Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.HeaderRowColor));
+				});
+			}
+		}
+
+		[Fact]
+		public async Task GenerateSheet_CreatesSubheaderRowsWithCorrectFormatting()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			IList<AppendRequest>? capturedAppendRequests = null;
+			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
+				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.NotNull(capturedAppendRequests);
+			Assert.All(capturedAppendRequests!, request =>
+			{
+				GoogleSheetRow subheaderRow = request.Rows.ElementAt(1);
+				
+				// Verify subheader row content
+				string[] subheaderValues = subheaderRow.Select(x => x.StringValue).ToArray();
+				subheaderValues.Should().BeEquivalentTo(ShootoutSheetHelper.HeaderRowColumns3Rounds);
+
+				// Verify subheader row formatting
+				Assert.All(subheaderRow, cell =>
+				{
+					Assert.NotNull(cell.GoogleBackgroundColor);
+					Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor));
+				});
+			});
+		}
+
+		[Fact]
+		public async Task GenerateSheet_CreatesTeamRowsWithCorrectFormulas()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			IList<AppendRequest>? capturedAppendRequests = null;
+			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
+				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.NotNull(capturedAppendRequests);
+			int startRowNum = 3;
+			for (int divisionIndex = 0; divisionIndex < capturedAppendRequests!.Count; divisionIndex++)
+			{
+				AppendRequest request = capturedAppendRequests[divisionIndex];
+				IEnumerable<GoogleSheetRow> teamRows = request.Rows.Skip(2);
+				
+				Assert.All(teamRows.Select((row, idx) => new { row, idx }), o =>
+				{
+					int rowNum = startRowNum + (divisionIndex * (TEST_TEAMS_PER_DIVISION + 2)) + o.idx;
+					string rankFormula = o.row.Last().FormulaValue;
+					Assert.Contains($"E{rowNum}", rankFormula);
+				});
+			}
+		}
+
+		[Fact]
+		public async Task GenerateSheet_CreatesColumnResizeRequests()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			List<IEnumerable<Request>> allCapturedRequests = new List<IEnumerable<Request>>();
+			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>()))
+				.Callback<IEnumerable<Request>, CancellationToken>((rqs, ct) => allCapturedRequests.Add(rqs));
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.NotEmpty(allCapturedRequests);
+			
+			// Find the batch that contains the resize requests (the one that's not a single rename request)
+			IEnumerable<Request>? resizeRequestsBatch = allCapturedRequests.FirstOrDefault(batch => 
+				batch.Count() > 1 && batch.All(r => r.UpdateDimensionProperties != null));
+			Assert.NotNull(resizeRequestsBatch);
+			
+			// Should have resize requests for all columns except the first (team name)
+			Assert.Equal(ShootoutSheetHelper.HeaderRowColumns4Rounds.Length - 1, resizeRequestsBatch!.Count());
+			Assert.All(resizeRequestsBatch, r =>
+			{
+				Assert.NotNull(r.UpdateDimensionProperties);
+				Assert.Equal("COLUMNS", r.UpdateDimensionProperties.Range.Dimension);
+			});
+		}
+
+		[Fact]
+		public async Task GenerateSheet_ReturnsConfigWithCorrectShootoutRowNumbers()
+		{
+			// Arrange
+			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			ShootoutSheetConfig config = await service.GenerateSheet(allTeams);
+
+			// Assert
+			Assert.Equal(allTeams.Count, config.ShootoutStartAndEndRows.Count());
+			
+			IEnumerable<int> expectedRowIndices = ShootoutConstants.DivisionNames.Select((div, idx) => idx * TEST_TEAMS_PER_DIVISION + (idx + 1) * 2);
+			for (int i = 0; i < config.ShootoutStartAndEndRows.Count(); i++)
+			{
+				int expectedRowIdx = expectedRowIndices.ElementAt(i);
+				int startRow = expectedRowIdx + 1;
+				int endRow = expectedRowIdx + TEST_TEAMS_PER_DIVISION;
+				Tuple<int, int> startAndEnd = config.ShootoutStartAndEndRows.ElementAt(i).Value;
+				Assert.Equal(startRow, startAndEnd.Item1);
+				Assert.Equal(endRow, startAndEnd.Item2);
+			}
+		}
+
+		[Fact]
+		public async Task HideHelperColumns_CreatesGroupAndHidesColumns()
+		{
+			// Arrange
 			Fixture fixture = new Fixture();
-			const int QUANTITY = 4;
 			Dictionary<string, IEnumerable<Team>> allTeams = new Dictionary<string, IEnumerable<Team>>();
 			foreach (string division in ShootoutConstants.DivisionNames)
 			{
-				allTeams.Add(division, fixture.Build<Team>().With(x => x.DivisionName, division).CreateMany(QUANTITY));
+				allTeams.Add(division, fixture.Build<Team>().With(x => x.DivisionName, division).CreateMany(TEST_TEAMS_PER_DIVISION));
+			}
+
+			ShootoutSheetConfig config = new ShootoutSheetConfig
+			{
+				SheetId = fixture.Create<int>()
+			};
+
+			// Add division configs
+			foreach (var division in allTeams)
+			{
+				DivisionSheetConfig divConfig = DivisionSheetConfigFactory.GetForTeams(division.Value.Count());
+				divConfig.DivisionName = division.Key;
+				config.DivisionConfigs.Add(division.Key, divConfig);
+			}
+
+			Mock<ISheetsClient> mockClient = new Mock<ISheetsClient>();
+			IList<Request>? capturedRequests = null;
+			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>()))
+				.Callback<IEnumerable<Request>, CancellationToken>((rqs, ct) => capturedRequests = rqs.ToList());
+
+			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
+
+			// Act
+			await service.HideHelperColumns(config);
+
+			// Assert
+			Assert.NotNull(capturedRequests);
+			Assert.Equal(2, capturedRequests!.Count); // One to create group, one to hide it
+
+			// Verify first request creates a dimension group
+			Request groupRequest = capturedRequests[0];
+			Assert.NotNull(groupRequest.AddDimensionGroup);
+			Assert.Equal("COLUMNS", groupRequest.AddDimensionGroup.Range.Dimension);
+			Assert.Equal(config.SheetId, groupRequest.AddDimensionGroup.Range.SheetId);
+
+			// Verify second request hides the columns
+			Request hideRequest = capturedRequests[1];
+			Assert.NotNull(hideRequest.UpdateDimensionProperties);
+			Assert.Equal("COLUMNS", hideRequest.UpdateDimensionProperties.Range.Dimension);
+			Assert.Equal(config.SheetId, hideRequest.UpdateDimensionProperties.Range.SheetId);
+			Assert.True(hideRequest.UpdateDimensionProperties.Properties.HiddenByUser);
+			Assert.Equal("hiddenByUser", hideRequest.UpdateDimensionProperties.Fields);
+
+			// Verify both requests target the same column range
+			DivisionSheetConfig anyDivisionConfig = config.DivisionConfigs.Values.First();
+			ShootoutSheetHelper helper = new ShootoutSheetHelper(anyDivisionConfig);
+			int expectedStartColumn = helper.LastVisibleColumnIndex + 1;
+			int expectedEndColumn = helper.SortedStandingsListColumnIndex + anyDivisionConfig.NumberOfTeams;
+
+			Assert.Equal(expectedStartColumn, groupRequest.AddDimensionGroup.Range.StartIndex);
+			Assert.Equal(expectedEndColumn, groupRequest.AddDimensionGroup.Range.EndIndex);
+			Assert.Equal(expectedStartColumn, hideRequest.UpdateDimensionProperties.Range.StartIndex);
+			Assert.Equal(expectedEndColumn, hideRequest.UpdateDimensionProperties.Range.EndIndex);
+		}
+
+		#region Helper Methods
+
+		private (Mock<ISheetsClient>, Dictionary<string, IEnumerable<Team>>) SetupMockClientAndTeams()
+		{
+			Fixture fixture = new Fixture();
+			Dictionary<string, IEnumerable<Team>> allTeams = new Dictionary<string, IEnumerable<Team>>();
+			foreach (string division in ShootoutConstants.DivisionNames)
+			{
+				allTeams.Add(division, fixture.Build<Team>().With(x => x.DivisionName, division).CreateMany(TEST_TEAMS_PER_DIVISION));
 			}
 
 			Sheet sheet = new Sheet
@@ -55,117 +333,16 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			Mock<ISheetsClient> mockClient = new Mock<ISheetsClient>();
 			mockClient.Setup(x => x.CreateSpreadsheet(It.IsAny<string>(), It.IsAny<CancellationToken>()));
-			mockClient.Setup(x => x.GetOrAddSheet(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync(sheet);
+			mockClient.Setup(x => x.GetOrAddSheet(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+				.ReturnsAsync(sheet);
+			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()));
+			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>()));
+			mockClient.Setup(x => x.AutoResizeColumn(It.IsAny<string>(), It.IsAny<int>()))
+				.ReturnsAsync(100);
 
-			IList<AppendRequest>? appendRequests = null;
-			Action<IList<AppendRequest>, CancellationToken> appendCallback = (rqs, ct) => appendRequests = rqs;
-			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>())).Callback(appendCallback);
-
-			IEnumerable<Request>? updateRequests = null;
-			string? newSheetName = null;
-			Action<IEnumerable<Request>, CancellationToken> updateNameCallback = (rqs, ct) => newSheetName = rqs.Single().UpdateSheetProperties.Properties.Title;
-			mockClient.Setup(x => x.ExecuteRequests(It.Is<IEnumerable<Request>>(rqs => rqs.Count() == 1), It.IsAny<CancellationToken>())).Callback(updateNameCallback);
-
-			Action<IEnumerable<Request>, CancellationToken> updateCallback = (rqs, ct) => updateRequests = rqs;
-			mockClient.Setup(x => x.ExecuteRequests(It.Is<IEnumerable<Request>>(rqs => rqs.Count() > 1), It.IsAny<CancellationToken>())).Callback(updateCallback);
-
-			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
-			ShootoutSheetConfig config = await service.GenerateSheet(allTeams);
-
-			// all teams should have a team sheet cell value
-			Assert.All(allTeams, div => Assert.All(div.Value, team => Assert.NotEmpty(team.TeamSheetCell)));
-
-			// verify the data updates
-			Assert.NotNull(newSheetName);
-			Assert.Equal(ShootoutConstants.SHOOTOUT_SHEET_NAME, newSheetName);
-
-			Assert.NotNull(appendRequests);
-			Assert.Equal(allTeams.Count, appendRequests!.Count);
-			Assert.All(appendRequests!, rq => Assert.Equal(2 + QUANTITY, rq.Rows.Count)); // 1 row per team + 2 header rows
-
-			Action<GoogleSheetRow, string> assertHeaderRow = (row, div) =>
-			{
-				Assert.Equal(div, row.First().StringValue);
-				Assert.All(row.Skip(1), cell => // only the first cell has a value
-				{
-					Assert.IsType<string>(cell.CellValue);
-					Assert.Empty(cell.StringValue);
-				});
-				Assert.All(row, cell =>
-				{
-					Assert.NotNull(cell.GoogleBackgroundColor);
-					Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.HeaderRowColor));
-				});
-			};
-			Action<GoogleSheetRow> assertSubheaderRow = row =>
-			{
-				string[] subheaderValues = row.Select(x => x.StringValue).ToArray();
-				subheaderValues.Should().BeEquivalentTo(ShootoutSheetHelper.HeaderRowColumns3Rounds);
-				Assert.All(row, cell =>
-				{
-					Assert.NotNull(cell.GoogleBackgroundColor);
-					Assert.True(cell.GoogleBackgroundColor.GoogleColorEquals(Colors.SubheaderRowColor));
-				});
-			};
-			Action<GoogleSheetRow, int> assertTeamRow = (row, rowNum) =>
-			{
-				// since we tested the team row generation separately, here all we're checking is that the row numbers are correct
-				// and we only need to check the row number in one formula because it's the same in the other
-				string rankFormula = row.Last().FormulaValue;
-				Assert.Contains($"E{rowNum}", rankFormula);
-			};
-			Action<AppendRequest, string, IEnumerable<Team>, int> assertDivisionRequest = (rq, div, teams, startRow) =>
-			{
-				assertHeaderRow(rq.Rows.ElementAt(0), div);
-				assertSubheaderRow(rq.Rows.ElementAt(1));
-				IEnumerable<GoogleSheetRow> teamRows = rq.Rows.Skip(2);
-				Assert.Equal(teams.Count(), teamRows.Count());
-				Assert.All(teamRows.Select((row, idx) => new { row, idx }), o => assertTeamRow(o.row, startRow + o.idx));
-			};
-
-			int counter = 0;
-			int startRowNum = 3;
-			Assert.All(appendRequests, rq =>
-			{
-				KeyValuePair<string, IEnumerable<Team>> pair = allTeams.ElementAt(counter);
-				assertDivisionRequest(rq, pair.Key, pair.Value, startRowNum + (counter * (QUANTITY + 2)));
-				counter += 1;
-			});
-
-			// verify the conditional format requests: 2 per division
-			IEnumerable<Request> formatRequests = updateRequests!.Where(rq => rq.AddConditionalFormatRule != null);
-			Assert.Equal(ShootoutConstants.DivisionNames.Count() * 2, formatRequests.Count());
-
-			IEnumerable<int> expectedRowIndices = ShootoutConstants.DivisionNames.Select((div, idx) => idx * QUANTITY + (idx + 1) * 2);
-			Queue<int> qExpectedRowIndices = new Queue<int>(expectedRowIndices);
-
-			Action<Request> assertConditionalFormatting = r => Assert.NotNull(r.AddConditionalFormatRule);
-			Assert.All(formatRequests, rq => assertConditionalFormatting(rq));
-
-			for (int i = 0; i < formatRequests.Count(); i += 2)
-			{
-				int expectedRowIdx = qExpectedRowIndices.Dequeue();
-				Request req1 = formatRequests.ElementAt(i);
-				Request req2 = formatRequests.ElementAt(i + 1);
-				Assert.Equal(expectedRowIdx, req1.AddConditionalFormatRule.Rule.Ranges.First().StartRowIndex);
-				Assert.Equal(expectedRowIdx, req2.AddConditionalFormatRule.Rule.Ranges.First().StartRowIndex);
-			}
-
-			// verify the resize requests: 5 columns
-			IEnumerable<Request> resizeRequests = updateRequests!.Where(rq => rq.UpdateDimensionProperties != null);
-			Assert.Equal(ShootoutSheetHelper.HeaderRowColumns4Rounds.Length - 1, resizeRequests.Count());
-
-			// verify the shootout row numbers
-			Assert.Equal(allTeams.Count, config.ShootoutStartAndEndRows.Count());
-			for (int i = 0; i < config.ShootoutStartAndEndRows.Count(); i++)
-			{
-				int expectedRowIdx = expectedRowIndices.ElementAt(i);
-				int startRow = expectedRowIdx + 1;
-				int endRow = expectedRowIdx + QUANTITY;
-				Tuple<int, int> startAndEnd = config.ShootoutStartAndEndRows.ElementAt(i).Value;
-				Assert.Equal(startRow, startAndEnd.Item1);
-				Assert.Equal(endRow, startAndEnd.Item2);
-			}
+			return (mockClient, allTeams);
 		}
+
+		#endregion
 	}
 }

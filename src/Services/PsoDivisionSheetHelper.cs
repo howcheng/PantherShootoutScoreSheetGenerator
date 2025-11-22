@@ -73,6 +73,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			MainTiebreakerColumns.Count +
 			WinnerAndPointsColumns.Count;
 
+		/// <summary>
+		/// The last column index that should be visible to users (Goal Differential column in standings table)
+		/// </summary>
+		public int LastVisibleColumnIndex => GetColumnIndexByHeader(Constants.HDR_GOAL_DIFF);
+
 		#endregion
 
 		public override int GetColumnIndexByHeader(string colHeader)

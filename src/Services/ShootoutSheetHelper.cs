@@ -61,6 +61,11 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			NumberOfSpacerColumnsBeforeTiebreakers +
 			TiebreakerColumns.Count + 1;
 
+		/// <summary>
+		/// The last column index that should be visible to users (Rank column in team list)
+		/// </summary>
+		public int LastVisibleColumnIndex => GetColumnIndexByHeader(Constants.HDR_RANK);
+
 		private const int NumberOfSpacerColumnsBeforeScores = 1;
 		private int NumberOfShootoutRoundsColumns => DivisionSheetConfig.NumberOfShootoutRounds * ScoreEntryColumns.Count;
 		private int NumberOfSpacerColumnsBeforeTiebreakers => DivisionSheetConfig.NumberOfShootoutRounds == 3 ? ScoreEntryColumns.Count + 1 : 1;

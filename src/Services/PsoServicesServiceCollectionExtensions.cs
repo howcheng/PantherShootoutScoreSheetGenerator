@@ -9,6 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
 		{
 			int numTeams = divisionTeams.Count();
 
+			services.AddSingleton<IColumnVisibilityHelper, ColumnVisibilityHelper>();
 			services.AddSingleton<IStandingsRequestCreatorFactory, StandingsRequestCreatorFactory>();
 
 			// request creators for score entry portion
