@@ -272,7 +272,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			foreach (string hdr in ShootoutSheetHelper.TiebreakerColumns)
 			{
 				IStandingsRequestCreator creator = _requestCreatorFactory.GetRequestCreator(hdr);
-				int startGamesRowNum = info.StandingsStartAndEndRowNums.First().Item1;
+				// The tiebreaker section starts at the row after the header (startRowIndex + 1 for the index)
+				// but formulas use row numbers (1-indexed), so we need startRowIndex + 2
+				int startGamesRowNum = startRowIndex + 2;
 				ShootoutTiebreakerRequestCreatorConfig config = new()
 				{
 					SheetId = _shootoutSheetConfig.SheetId,
