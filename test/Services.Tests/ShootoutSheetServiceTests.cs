@@ -18,13 +18,14 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 			ShootoutSheetService service = new ShootoutSheetService(Mock.Of<ISheetsClient>(), Mock.Of<ILogger<ShootoutSheetService>>());
 			const int TEAMS_COUNT = 8;
-			GoogleSheetRow row = service.CreateTeamRow(team, firstTeamRowNum, rowIndex, TEAMS_COUNT);
+			DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(TEAMS_COUNT);
+			ShootoutSheetHelper helper = new ShootoutSheetHelper(config);
+			GoogleSheetRow row = service.CreateTeamRow(team, firstTeamRowNum, rowIndex, TEAMS_COUNT, helper);
 
 			int EXPECTED_START_ROW = rowIndex + 1;
-			string totalFormula = $"=SUM(B{EXPECTED_START_ROW}:E{EXPECTED_START_ROW})";
+			string totalFormula = $"=SUM(B{EXPECTED_START_ROW}:D{EXPECTED_START_ROW})";
 			Assert.Collection(row
 				, cell => Assert.Equal(team.TeamName, cell.StringValue)
-				, cell => Assert.Empty(cell.StringValue)
 				, cell => Assert.Empty(cell.StringValue)
 				, cell => Assert.Empty(cell.StringValue)
 				, cell => Assert.Empty(cell.StringValue)
@@ -38,11 +39,11 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_SetsTeamSheetCellForAllTeams()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.All(allTeams, div => Assert.All(div.Value, team => Assert.NotEmpty(team.TeamSheetCell)));
@@ -52,7 +53,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_RenamesSheetToShootoutSheetName()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			List<IEnumerable<Request>> allCapturedRequests = new List<IEnumerable<Request>>();
 			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>()))
 				.Callback<IEnumerable<Request>, CancellationToken>((rqs, ct) => allCapturedRequests.Add(rqs));
@@ -60,7 +61,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			// Find the single-request batch that renames the sheet
@@ -74,7 +75,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_CreatesCorrectNumberOfAppendRequests()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			IList<AppendRequest>? capturedAppendRequests = null;
 			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
 				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
@@ -82,7 +83,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.NotNull(capturedAppendRequests);
@@ -94,7 +95,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_CreatesHeaderRowsWithCorrectFormatting()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			IList<AppendRequest>? capturedAppendRequests = null;
 			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
 				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
@@ -102,7 +103,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.NotNull(capturedAppendRequests);
@@ -131,7 +132,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_CreatesSubheaderRowsWithCorrectFormatting()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			IList<AppendRequest>? capturedAppendRequests = null;
 			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
 				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
@@ -139,7 +140,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.NotNull(capturedAppendRequests);
@@ -164,7 +165,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_CreatesTeamRowsWithCorrectFormulas()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			IList<AppendRequest>? capturedAppendRequests = null;
 			mockClient.Setup(x => x.Append(It.IsAny<IList<AppendRequest>>(), It.IsAny<CancellationToken>()))
 				.Callback<IList<AppendRequest>, CancellationToken>((rqs, ct) => capturedAppendRequests = rqs);
@@ -172,7 +173,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.NotNull(capturedAppendRequests);
@@ -185,8 +186,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				Assert.All(teamRows.Select((row, idx) => new { row, idx }), o =>
 				{
 					int rowNum = startRowNum + (divisionIndex * (TEST_TEAMS_PER_DIVISION + 2)) + o.idx;
-					string rankFormula = o.row.Last().FormulaValue;
-					Assert.Contains($"E{rowNum}", rankFormula);
+					string sumFormula = o.row.Last().FormulaValue;
+					Assert.Contains($"B{rowNum}", sumFormula);
 				});
 			}
 		}
@@ -195,7 +196,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 		public async Task GenerateSheet_CreatesColumnResizeRequests()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			List<IEnumerable<Request>> allCapturedRequests = new List<IEnumerable<Request>>();
 			mockClient.Setup(x => x.ExecuteRequests(It.IsAny<IEnumerable<Request>>(), It.IsAny<CancellationToken>()))
 				.Callback<IEnumerable<Request>, CancellationToken>((rqs, ct) => allCapturedRequests.Add(rqs));
@@ -203,7 +204,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			await service.GenerateSheet(allTeams);
+			await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.NotEmpty(allCapturedRequests);
@@ -216,21 +217,21 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			// Should have resize requests for all columns except the first (team name)
 			Assert.Equal(ShootoutSheetHelper.HeaderRowColumns4Rounds.Length - 1, resizeRequestsBatch!.Count());
 			Assert.All(resizeRequestsBatch, r =>
-			{
-				Assert.NotNull(r.UpdateDimensionProperties);
-				Assert.Equal("COLUMNS", r.UpdateDimensionProperties.Range.Dimension);
-			});
+		{
+			Assert.NotNull(r.UpdateDimensionProperties);
+			Assert.Equal("COLUMNS", r.UpdateDimensionProperties.Range.Dimension);
+		});
 		}
 
 		[Fact]
 		public async Task GenerateSheet_ReturnsConfigWithCorrectShootoutRowNumbers()
 		{
 			// Arrange
-			var (mockClient, allTeams) = SetupMockClientAndTeams();
+			var (mockClient, allTeams, divisionConfigs) = SetupMockClientAndTeams();
 			ShootoutSheetService service = new ShootoutSheetService(mockClient.Object, Mock.Of<ILogger<ShootoutSheetService>>());
 
 			// Act
-			ShootoutSheetConfig config = await service.GenerateSheet(allTeams);
+			ShootoutSheetConfig config = await service.GenerateSheet(allTeams, divisionConfigs);
 
 			// Assert
 			Assert.Equal(allTeams.Count, config.ShootoutStartAndEndRows.Count());
@@ -313,13 +314,18 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 
 		#region Helper Methods
 
-		private (Mock<ISheetsClient>, Dictionary<string, IEnumerable<Team>>) SetupMockClientAndTeams()
+		private (Mock<ISheetsClient>, Dictionary<string, IEnumerable<Team>>, Dictionary<string, DivisionSheetConfig>) SetupMockClientAndTeams()
 		{
 			Fixture fixture = new Fixture();
 			Dictionary<string, IEnumerable<Team>> allTeams = new Dictionary<string, IEnumerable<Team>>();
+			Dictionary<string, DivisionSheetConfig> divisionConfigs = new Dictionary<string, DivisionSheetConfig>();
+			
 			foreach (string division in ShootoutConstants.DivisionNames)
 			{
 				allTeams.Add(division, fixture.Build<Team>().With(x => x.DivisionName, division).CreateMany(TEST_TEAMS_PER_DIVISION));
+				DivisionSheetConfig config = DivisionSheetConfigFactory.GetForTeams(TEST_TEAMS_PER_DIVISION);
+				config.DivisionName = division;
+				divisionConfigs.Add(division, config);
 			}
 
 			Sheet sheet = new Sheet
@@ -340,7 +346,7 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			mockClient.Setup(x => x.AutoResizeColumn(It.IsAny<string>(), It.IsAny<int>()))
 				.ReturnsAsync(100);
 
-			return (mockClient, allTeams);
+			return (mockClient, allTeams, divisionConfigs);
 		}
 
 		#endregion

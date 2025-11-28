@@ -55,8 +55,17 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			ILogger<Program> logger = provider.GetRequiredService<ILogger<Program>>();
 			logger.LogInformation("Spreadsheet ID {id} created", sheetsClient.SpreadsheetId);
 
+			// Create division configs for all divisions because we need them to create the Shootout sheet
+			Dictionary<string, DivisionSheetConfig> divisionConfigs = new Dictionary<string, DivisionSheetConfig>();
+			foreach (KeyValuePair<string, IEnumerable<Team>> pair in teams)
+			{
+				DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(pair.Value.Count());
+				divisionConfig.DivisionName = pair.Key;
+				divisionConfigs.Add(pair.Key, divisionConfig);
+			}
+
 			IShootoutSheetService shootoutSheetService = provider.GetRequiredService<IShootoutSheetService>();
-			ShootoutSheetConfig config = await shootoutSheetService.GenerateSheet(teams);
+			ShootoutSheetConfig config = await shootoutSheetService.GenerateSheet(teams, divisionConfigs);
 
 			// loop thru the divisions
 			foreach (KeyValuePair<string, IEnumerable<Team>> pair in teams)

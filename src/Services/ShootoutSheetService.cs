@@ -7,14 +7,10 @@ namespace PantherShootoutScoreSheetGenerator.Services
 {
 	/// <summary>
 	/// Creates the sheet for the shootout portion of the tournament: team lists,score display columns, and conditional formatting for winners.
-	/// Requests for the actual score entry section, the tiebreaker columns, and sorted standings list are done in <see cref="ShootoutScoreEntryService"/>.
+	/// Requests for the actual score entry section, the tiebreakers, and sorted standings list are done in <see cref="ShootoutScoreEntryService"/>.
 	/// </summary>
 	public class ShootoutSheetService : IShootoutSheetService
 	{
-		public static string[] GetHeaderRowColumns(int numTeams) => (numTeams % 5) == 0
-			? ShootoutSheetHelper.HeaderRowColumns4Rounds
-			: ShootoutSheetHelper.HeaderRowColumns3Rounds;
-
 		private readonly ISheetsClient _sheetsClient;
 		private readonly ILogger<ShootoutSheetService> _logger;
 		private readonly StandingsSheetHelper _helper;
@@ -26,7 +22,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			_helper = new StandingsSheetHelper(ShootoutSheetHelper.HeaderRowColumns4Rounds); // for the purposes in this class, it doesn't really matter
 		}
 
-		public async Task<ShootoutSheetConfig> GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams)
+		public async Task<ShootoutSheetConfig> GenerateSheet(IDictionary<string, IEnumerable<Team>> allTeams, IDictionary<string, DivisionSheetConfig> divisionConfigs)
 		{
 			_logger.LogInformation("Generating Shootout sheet");
 
@@ -35,6 +31,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			ShootoutSheetConfig config = new()
 			{
 				SheetId = sheet.Properties.SheetId,
+				DivisionConfigs = divisionConfigs.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
 			};
 
 			List<Request> updateSheetRequests = new List<Request>();
@@ -45,7 +42,8 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			foreach (KeyValuePair<string, IEnumerable<Team>> division in allTeams)
 			{
 				List<Team> teams = division.Value.ToList();
-				string[] headerRowColumns = GetHeaderRowColumns(division.Value.Count());
+				DivisionSheetConfig divisionConfig = divisionConfigs[division.Key];
+				ShootoutSheetHelper divisionHelper = new ShootoutSheetHelper(divisionConfig);
 
 				AppendRequest divisionRequest = new AppendRequest(ShootoutConstants.SHOOTOUT_SHEET_NAME);
 
@@ -54,17 +52,17 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				{
 					new GoogleSheetCell(division.Key).SetHeaderCellFormatting()
 				};
-				headerRow.AddRange(Enumerable.Repeat(string.Empty, headerRowColumns.Length - 1).Select(x => new GoogleSheetCell(x).SetHeaderCellFormatting()));
+				headerRow.AddRange(Enumerable.Repeat(string.Empty, divisionHelper.HeaderRowColumns.Count - 1).Select(x => new GoogleSheetCell(x).SetHeaderCellFormatting()));
 				divisionRequest.Rows.Add(headerRow);
 
 				// subheader row
-				GoogleSheetRow subheaderRow = _helper.CreateHeaderRow(headerRowColumns, cell => cell.SetSubheaderCellFormatting());
+				GoogleSheetRow subheaderRow = divisionHelper.CreateHeaderRow(divisionHelper.HeaderRowColumns, cell => cell.SetSubheaderCellFormatting());
 				divisionRequest.Rows.Add(subheaderRow);
 
 				int firstTeamRowNum = rowIndex + 1;
 				foreach (Team team in teams)
 				{
-					GoogleSheetRow teamRow = CreateTeamRow(team, firstTeamRowNum, rowIndex, teams.Count);
+					GoogleSheetRow teamRow = CreateTeamRow(team, firstTeamRowNum, rowIndex, teams.Count, divisionHelper);
 					divisionRequest.Rows.Add(teamRow);
 					rowIndex += 1;
 				}
@@ -108,14 +106,16 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			return sheet;
 		}
 
-		internal GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount)
+		internal GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount, ShootoutSheetHelper helper)
 		{
 			int rowNum = rowIndex + 1;
 			team.TeamSheetCell = $"A{rowNum}";
-			// shootout total: =SUM(B3:D3) -- doesn't matter if the division only has 3 rounds; the R4 column will be blank in that case
-			string r1ColName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_ROUND1);
-			string r4ColName = _helper.GetColumnNameByHeader(ShootoutConstants.HDR_ROUND4);
-			string shootoutSumRange = Utilities.CreateCellRangeString(r1ColName, rowNum, r4ColName, rowNum, CellRangeOptions.None);
+			// shootout total: =SUM(B3:D3) or =SUM(B3:E3) depending on number of rounds
+			string r1ColName = helper.GetColumnNameByHeader(ShootoutConstants.HDR_ROUND1);
+			string lastRoundColName = helper.DivisionSheetConfig.NumberOfShootoutRounds == 3
+				? helper.GetColumnNameByHeader(ShootoutConstants.HDR_ROUND3)
+				: helper.GetColumnNameByHeader(ShootoutConstants.HDR_ROUND4);
+			string shootoutSumRange = Utilities.CreateCellRangeString(r1ColName, rowNum, lastRoundColName, rowNum, CellRangeOptions.None);
 			string sumFormula = $"=SUM({shootoutSumRange})";
 
 			// we can't do the rank formula until after the score entry section is done
@@ -127,9 +127,15 @@ namespace PantherShootoutScoreSheetGenerator.Services
 				new GoogleSheetCell(string.Empty),
 				new GoogleSheetCell(string.Empty),
 				new GoogleSheetCell(string.Empty),
-				new GoogleSheetCell(string.Empty),
-				new GoogleSheetCell() { FormulaValue = sumFormula },
 			};
+			
+			// Add 4th round column if needed
+			if (helper.DivisionSheetConfig.NumberOfShootoutRounds == 4)
+			{
+				teamRow.Add(new GoogleSheetCell(string.Empty));
+			}
+			
+			teamRow.Add(new GoogleSheetCell() { FormulaValue = sumFormula });
 			return teamRow;
 		}
 
