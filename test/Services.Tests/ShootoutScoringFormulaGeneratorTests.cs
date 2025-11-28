@@ -40,7 +40,7 @@
 		[Fact]
 		public void TestGetShootoutScoreDisplayFormula()
 		{
-			// test for 3 rounds (4/6/8/12 teams)
+			// Test for divisions where all teams play in every round (4, 8, or 12 teams)
 			string expected = "=IF(ROWS({1}$15:{2}$16)+COLUMNS({1}$15:{2}$16)=COUNT({1}$15:{2}$16), SUMIFS({1}$15:{1}$16, {0}$15:{0}$16,\"=\"&A15)+SUMIFS({2}$15:{2}$16, {3}$15:{3}$16,\"=\"&A15), \"\")";
 
 			ShootoutScoringFormulaGenerator fg = GetFormulaGenerator();
@@ -56,8 +56,9 @@
 		[Theory]
 		[InlineData(1)]
 		[InlineData(4)]
-		public void TestGetShootoutScoreDisplayFormula5Teams(int roundNum)
+		public void TestGetShootoutScoreDisplayFormulaWithBye(int roundNum)
 		{
+			// Test for divisions where one team has a bye each round (5/6/10 teams)
 			string homeTeamCol = roundNum == 1 ? "I" : "U";
 			string homeScoreCol = roundNum == 1 ? "J" : "V";
 			string awayScoreCol = roundNum == 1 ? "K" : "W";
@@ -71,7 +72,7 @@
 			const string teamSheetCell = "A3";
 			const int startRowNum = 3;
 			const int endRowNum = 4;
-			string formula = fg.GetScoreDisplayFormula5Teams(teamSheetCell, startRowNum, endRowNum, roundNum);
+			string formula = fg.GetScoreDisplayFormulaWithBye(teamSheetCell, startRowNum, endRowNum, roundNum);
 			Assert.Equal(expected, formula);
 		}
 

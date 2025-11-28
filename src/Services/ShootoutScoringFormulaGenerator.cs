@@ -111,7 +111,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		///		+SUMIFS(W$3:W$4, X$3:X$4,"="&A3), "")
 		///	-- which is mostly the same except for the COUNT(B3:D3)<3 part because one team will have already had 3 turns so their 4th turn doesn't count
 		/// </returns>
-		public string GetScoreDisplayFormula5Teams(string teamSheetCell, int startRowNum, int endRowNum, int roundNum)
+		public string GetScoreDisplayFormulaWithBye(string teamSheetCell, int startRowNum, int endRowNum, int roundNum)
 		{
 			ScoreEntryColumns cols = GetScoreEntryColumnsForRound(roundNum);
 

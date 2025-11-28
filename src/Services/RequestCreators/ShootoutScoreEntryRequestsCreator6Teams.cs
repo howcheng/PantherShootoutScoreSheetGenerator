@@ -245,8 +245,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			int endRowNum = scoreEntryStartAndEnd.Item2;
 			int colIdx = _helper.GetColumnIndexByHeader($"R{roundNum}");
 			
-			// For 6-team divisions (3 teams per pool), use the standard formula
-			string formula = _formulaGenerator.GetScoreDisplayFormula(firstTeamSheetCell, startRowNum, endRowNum, roundNum);
+			// For 6-team divisions (3 teams per pool), not all teams play in every round (similar to 5-team divisions)
+			// Use the 5-teams formula which checks if the team actually played in that round
+			string formula = _formulaGenerator.GetScoreDisplayFormulaWithBye(firstTeamSheetCell, startRowNum, endRowNum, roundNum);
 
 			Request req = RequestCreator.CreateRepeatedSheetFormulaRequest(_shootoutSheetConfig.SheetId, startRowIndex, colIdx, _divisionConfig.TeamsPerPool, formula);
 			sheetRequests.UpdateSheetRequests.Add(req);
