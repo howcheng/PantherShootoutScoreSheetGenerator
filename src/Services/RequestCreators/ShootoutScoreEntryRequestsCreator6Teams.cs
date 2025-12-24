@@ -244,16 +244,15 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			int startRowNum = scoreEntryStartAndEnd.Item1;
 			int endRowNum = scoreEntryStartAndEnd.Item2;
 			int colIdx = _helper.GetColumnIndexByHeader($"R{roundNum}");
-			
+
 			// For 6-team divisions (3 teams per pool), not all teams play in every round (similar to 5-team divisions)
-			// Use the 5-teams formula which checks if the team actually played in that round
 			string formula = _formulaGenerator.GetScoreDisplayFormulaWithBye(firstTeamSheetCell, startRowNum, endRowNum, roundNum);
 
 			Request req = RequestCreator.CreateRepeatedSheetFormulaRequest(_shootoutSheetConfig.SheetId, startRowIndex, colIdx, _divisionConfig.TeamsPerPool, formula);
 			sheetRequests.UpdateSheetRequests.Add(req);
 		}
 
-		private void CreateTiebreakerColumns(int startRowIndex, ChampionshipInfo info, SheetRequests sheetRequests, List<Tuple<int, int>> scoreEntryStartAndEndRows)
+		private void CreateTiebreakerColumns(int startRowIndex, ChampionshipInfo info, SheetRequests sheetRequests, List<Tuple<int, int>> shootoutEntryStartAndEndRows)
 		{
 			// header columns
 			UpdateRequest headerRequest = new(ShootoutConstants.SHOOTOUT_SHEET_NAME)
@@ -270,27 +269,89 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			sheetRequests.UpdateValuesRequests.Add(headerRequest);
 
 			// tiebreaker columns
-			foreach (string hdr in ShootoutSheetHelper.TiebreakerColumns)
+			int startGamesRowNum = startRowIndex + 2; // First team row number on shootout sheet
+			
+			// If ScoreEntryStartAndEndRowNums is populated, create separate requests per pool
+			// Otherwise fall back to single request for all teams (for backward compatibility with tests)
+			if (info.ScoreEntryStartAndEndRowNums.Any())
 			{
-				IStandingsRequestCreator creator = _requestCreatorFactory.GetRequestCreator(hdr);
-				// The tiebreaker section starts at the row after the header (startRowIndex + 1 for the index)
-				// but formulas use row numbers (1-indexed), so we need startRowIndex + 2
-				int startGamesRowNum = startRowIndex + 2;
-				ShootoutTiebreakerRequestCreatorConfig config = new()
+				// For 6-team divisions, Round 4 games are championship games on the division sheet
+				// Get the division sheet row numbers for all Round 4 games
+				List<int> round4DivisionSheetRows = new List<int>
 				{
-					SheetId = _shootoutSheetConfig.SheetId,
-					SheetStartRowIndex = startRowIndex + 1,
-					RowCount = _divisionConfig.NumberOfTeams,
-					StartGamesRowNum = startGamesRowNum,
-					FirstTeamsSheetCell = Utilities.CreateCellReference(_helper.TeamNameColumnName, startGamesRowNum),
-					ScoreEntryStartAndEndRowNums = scoreEntryStartAndEndRows
+					info.ConsolationGameRowNum,
+					info.Semifinal1RowNum,
+					info.Semifinal2RowNum
 				};
-				Request request = creator.CreateRequest(config);
-				sheetRequests.UpdateSheetRequests.Add(request);
+				int round4MinRow = round4DivisionSheetRows.Min();
+				int round4MaxRow = round4DivisionSheetRows.Max();
+				Tuple<int, int> round4DivisionSheetRange = new(round4MinRow, round4MaxRow);
+				
+				// Each pool's tiebreaker formulas need to reference that pool's division sheet rows
+				int poolIdx = 0;
+				foreach (var poolEntry in info.ScoreEntryStartAndEndRowNums)
+				{
+					// Calculate the starting row for this pool's teams on the shootout sheet
+					int poolStartRowNum = startGamesRowNum + (poolIdx * _divisionConfig.TeamsPerPool);
+					int poolStartRowIdx = poolStartRowNum - 1; // Convert row number to index
+					
+					// Get this pool's division sheet row ranges for all rounds
+					// For 6-team divisions, we need all 4 rounds (3 pool play + 1 championship)
+					List<Tuple<int, int>> poolDivisionSheetRows = new List<Tuple<int, int>>(poolEntry.Value);
+					// Add the championship round rows for round 4 (division sheet rows, not shootout sheet rows!)
+					poolDivisionSheetRows.Add(round4DivisionSheetRange);
+					
+					foreach (string hdr in ShootoutSheetHelper.TiebreakerColumns)
+					{
+						IStandingsRequestCreator creator = _requestCreatorFactory.GetRequestCreator(hdr);
+						ShootoutTiebreakerRequestCreatorConfig config = new()
+						{
+							SheetId = _shootoutSheetConfig.SheetId,
+							SheetStartRowIndex = poolStartRowIdx,
+							RowCount = _divisionConfig.TeamsPerPool,
+							StartGamesRowNum = poolStartRowNum,
+							FirstTeamsSheetCell = Utilities.CreateCellReference(_helper.TeamNameColumnName, poolStartRowNum),
+							ScoreEntryStartAndEndRowNums = poolDivisionSheetRows
+						};
+						Request request = creator.CreateRequest(config);
+						sheetRequests.UpdateSheetRequests.Add(request);
+					}
 
-				// resize the column
-				Request resizeRequest = RequestCreator.CreateCellWidthRequest(_shootoutSheetConfig.SheetId, Constants.WIDTH_WIDE_NUM_COL, _helper.GetColumnIndexByHeader(hdr));
-				sheetRequests.UpdateSheetRequests.Add(resizeRequest);
+					// resize the columns (only need to do this once, not per pool)
+					if (poolIdx == 0)
+					{
+						foreach (string hdr in ShootoutSheetHelper.TiebreakerColumns)
+						{
+							Request resizeRequest = RequestCreator.CreateCellWidthRequest(_shootoutSheetConfig.SheetId, Constants.WIDTH_WIDE_NUM_COL, _helper.GetColumnIndexByHeader(hdr));
+							sheetRequests.UpdateSheetRequests.Add(resizeRequest);
+						}
+					}
+					
+					poolIdx++;
+				}
+			}
+			else
+			{
+				// Fall back to original behavior: single request for all teams
+				foreach (string hdr in ShootoutSheetHelper.TiebreakerColumns)
+				{
+					IStandingsRequestCreator creator = _requestCreatorFactory.GetRequestCreator(hdr);
+					ShootoutTiebreakerRequestCreatorConfig config = new()
+					{
+						SheetId = _shootoutSheetConfig.SheetId,
+						SheetStartRowIndex = startRowIndex + 1,
+						RowCount = _divisionConfig.NumberOfTeams,
+						StartGamesRowNum = startGamesRowNum,
+						FirstTeamsSheetCell = Utilities.CreateCellReference(_helper.TeamNameColumnName, startGamesRowNum),
+						ScoreEntryStartAndEndRowNums = shootoutEntryStartAndEndRows
+					};
+					Request request = creator.CreateRequest(config);
+					sheetRequests.UpdateSheetRequests.Add(request);
+
+					// resize the column
+					Request resizeRequest = RequestCreator.CreateCellWidthRequest(_shootoutSheetConfig.SheetId, Constants.WIDTH_WIDE_NUM_COL, _helper.GetColumnIndexByHeader(hdr));
+					sheetRequests.UpdateSheetRequests.Add(resizeRequest);
+				}
 			}
 		}
 

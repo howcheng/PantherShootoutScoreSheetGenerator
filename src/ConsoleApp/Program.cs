@@ -67,6 +67,12 @@ namespace PantherShootoutScoreSheetGenerator.ConsoleApp
 			IShootoutSheetService shootoutSheetService = provider.GetRequiredService<IShootoutSheetService>();
 			ShootoutSheetConfig config = await shootoutSheetService.GenerateSheet(teams, divisionConfigs);
 
+			// Update all division configs with the team name cell width from the shootout sheet
+			foreach (var divConfig in config.DivisionConfigs.Values)
+			{
+				divConfig.TeamNameCellWidth = config.TeamNameCellWidth;
+			}
+
 			// loop thru the divisions
 			foreach (KeyValuePair<string, IEnumerable<Team>> pair in teams)
 			{

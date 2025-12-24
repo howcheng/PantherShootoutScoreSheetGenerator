@@ -83,18 +83,28 @@ namespace Microsoft.Extensions.DependencyInjection
 					championshipCreatorType = typeof(ChampionshipRequestCreator12Teams);
 					break;
 			}
-			DivisionSheetConfig divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
+
+			// Get or create the DivisionSheetConfig for this division
+			string divisionName = divisionTeams.First().DivisionName;
+			DivisionSheetConfig divisionConfig;
+			if (config.DivisionConfigs.ContainsKey(divisionName))
+			{
+				divisionConfig = config.DivisionConfigs[divisionName];
+			}
+			else
+			{
+				// Create a new config if it doesn't exist (for backward compatibility with tests)
+				divisionConfig = DivisionSheetConfigFactory.GetForTeams(numTeams);
+				divisionConfig.DivisionName = divisionName;
+				config.DivisionConfigs.Add(divisionName, divisionConfig);
+			}
 			divisionConfig.TeamNameCellWidth = config.TeamNameCellWidth;
-			divisionConfig.DivisionName = divisionTeams.First().DivisionName;
-			config.DivisionConfigs.Add(divisionConfig.DivisionName, divisionConfig);
 
 			services.AddSingleton<DivisionSheetConfig>(divisionConfig); // need to register this as the base type
 			services.AddSingleton<IDivisionSheetGenerator>(provider => ActivatorUtilities.CreateInstance<DivisionSheetGenerator>(provider, divisionTeams));
 			services.AddSingleton(typeof(IChampionshipRequestCreator), championshipCreatorType);
 
 			// register the correct request creators for the number of teams
-			string divisionName = divisionTeams.First().DivisionName;
-
 			Type sheetHelperType, poolPlayCreatorType;
 			switch (numTeams)
 			{

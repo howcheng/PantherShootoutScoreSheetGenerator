@@ -365,16 +365,33 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			Assert.Equal(25, tiebreakerHeadersRequest.ColumnStart); // Column Y (index 24) for tiebreaker team name
 			Assert.Equal(START_IDX, tiebreakerHeadersRequest.RowStart);
 
-			int expectedStandingsRequestsCount = ShootoutSheetHelper.TiebreakerColumns.Count + 1; // +1 for the rank request
+			// Now we create separate tiebreaker requests for each pool, so we have:
+			// (TiebreakerColumns.Count * NumberOfPools) + 1 rank request
+			int expectedStandingsRequestsCount = (ShootoutSheetHelper.TiebreakerColumns.Count * _divisionConfig!.NumberOfPools) + 1;
 			List<Request> standingsRequests = requests.UpdateSheetRequests.Where(x => x.AddBanding != null).ToList();
 			Assert.Equal(expectedStandingsRequestsCount, standingsRequests.Count);
 			Assert.Equal(expectedStandingsRequestsCount, _standingsRequestConfigs.Count);
-			Assert.All(_standingsRequestConfigs.Cast<ShootoutTiebreakerRequestCreatorConfig>(), x =>
+			
+			// Verify each pool gets its own set of tiebreaker requests with correct row numbers
+			int expectedPoolStartRowNum = SCORE_ENTRY_START_IDX;
+			for (int poolIdx = 0; poolIdx < _divisionConfig.NumberOfPools; poolIdx++)
 			{
-				Assert.Equal(SCORE_ENTRY_START_IDX, x.StartGamesRowNum);
-				Assert.Equal($"A{SCORE_ENTRY_START_IDX}", x.FirstTeamsSheetCell);
-				Assert.Equal(NUM_TEAMS, x.RowCount);
-			});
+				int poolStartRowNum = expectedPoolStartRowNum + (poolIdx * _divisionConfig.TeamsPerPool);
+				
+				// Get configs for this pool (3 tiebreaker columns per pool)
+				var poolConfigs = _standingsRequestConfigs
+					.Cast<ShootoutTiebreakerRequestCreatorConfig>()
+					.Skip(poolIdx * ShootoutSheetHelper.TiebreakerColumns.Count)
+					.Take(ShootoutSheetHelper.TiebreakerColumns.Count)
+					.ToList();
+					
+				Assert.All(poolConfigs, x =>
+				{
+					Assert.Equal(poolStartRowNum, x.StartGamesRowNum);
+					Assert.Equal($"A{poolStartRowNum}", x.FirstTeamsSheetCell);
+					Assert.Equal(_divisionConfig.TeamsPerPool, x.RowCount);
+				});
+			}
 		}
 
 		[Fact]

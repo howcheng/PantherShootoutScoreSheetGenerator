@@ -12,8 +12,8 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 			services.AddPantherShootoutServices(CreateTeams(config), new ShootoutSheetConfig());
 			IServiceProvider provider = services.BuildServiceProvider();
 
-			PsoDivisionSheetHelper helper = provider.GetRequiredService<PsoDivisionSheetHelper>();
-			return helper;
+			var helper = provider.GetRequiredService<StandingsSheetHelper>();
+			return (PsoDivisionSheetHelper)helper;
 		}
 
 		[Theory]

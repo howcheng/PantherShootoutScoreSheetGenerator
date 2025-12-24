@@ -106,7 +106,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			return sheet;
 		}
 
-		internal GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount, ShootoutSheetHelper helper)
+		public GoogleSheetRow CreateTeamRow(Team team, int firstTeamRowNum, int rowIndex, int teamsCount, ShootoutSheetHelper helper)
 		{
 			int rowNum = rowIndex + 1;
 			team.TeamSheetCell = $"A{rowNum}";

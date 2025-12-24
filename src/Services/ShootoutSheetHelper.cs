@@ -9,7 +9,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	public class ShootoutSheetHelper : StandingsSheetHelper, IPsoSheetHelper
 	{
 
-		internal static string[] HeaderRowColumns3Rounds { get; } = new string[]
+		public static string[] HeaderRowColumns3Rounds { get; } = new string[]
 		{
 			Constants.HDR_TEAM_NAME,
 			ShootoutConstants.HDR_ROUND1,
@@ -20,7 +20,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			Constants.HDR_RANK,
 		};
 
-		internal static string[] HeaderRowColumns4Rounds { get; } = new string[]
+		public static string[] HeaderRowColumns4Rounds { get; } = new string[]
 		{
 			Constants.HDR_TEAM_NAME,
 			ShootoutConstants.HDR_ROUND1,
