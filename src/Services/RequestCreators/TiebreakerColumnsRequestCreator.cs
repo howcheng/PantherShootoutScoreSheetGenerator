@@ -27,6 +27,22 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			Team firstTeam = poolTeams.First();
 			string firstTeamSheetCell = $"{ShootoutConstants.SHOOTOUT_SHEET_NAME}!{firstTeam.TeamSheetCell}";
 
+			// Get the score entry rows for this specific pool
+			Tuple<int, int> scoreEntryStartAndEnd;
+			if (info.ScoreEntryStartAndEndRowNums.ContainsKey(firstTeam.PoolName))
+			{
+				// Use the first and last rows from this pool's score entry rows
+				List<Tuple<int, int>> poolScoreEntryRows = info.ScoreEntryStartAndEndRowNums[firstTeam.PoolName];
+				int firstRow = poolScoreEntryRows.First().Item1;
+				int lastRow = poolScoreEntryRows.Last().Item2;
+				scoreEntryStartAndEnd = new Tuple<int, int>(firstRow, lastRow);
+			}
+			else
+			{
+				// Fall back to using the division-wide values if pool info not available
+				scoreEntryStartAndEnd = new Tuple<int, int>(info.FirstScoreEntryRowNum, info.LastScoreEntryRowNum);
+			}
+
 			// tiebreaker columns
 			foreach (string hdr in PsoDivisionSheetHelper.MainTiebreakerColumns)
 			{
@@ -39,7 +55,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 					FirstTeamsSheetCell = firstTeamSheetCell,
 					RowCount = _config.TeamsPerPool,
 					StandingsStartAndEndRowNums = info.StandingsStartAndEndRowNums,
-					ScoreEntryStartAndEndRowNums = new(info.FirstScoreEntryRowNum, info.LastScoreEntryRowNum),
+					ScoreEntryStartAndEndRowNums = scoreEntryStartAndEnd,
 				};
 
 				IStandingsRequestCreator requestCreator = _requestCreatorFactory.GetRequestCreator(hdr);
