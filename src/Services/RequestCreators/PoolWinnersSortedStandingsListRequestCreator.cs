@@ -10,13 +10,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 	/// </summary>
 	public sealed class PoolWinnersSortedStandingsListRequestCreator : SortedStandingsListRequestCreator, IPoolWinnersSortedStandingsListRequestCreator
 	{
-		private readonly List<Tuple<string, ListSortDirection>> _sortColumns = new();
+		private readonly List<Tuple<string, ListSortDirection>> _sortColumns;
 		private readonly DivisionSheetConfig _config;
 
 		public PoolWinnersSortedStandingsListRequestCreator(FormulaGenerator formulaGenerator, DivisionSheetConfig config) 
 			: base(formulaGenerator, config)
 		{
-			_sortColumns = s_sortColumns;
+			// Create a new list from the base sort columns instead of referencing the static list
+			_sortColumns = new List<Tuple<string, ListSortDirection>>(s_sortColumns);
 			// we aren't using the head-to-head tiebreaker
 			// and although we are not using the KFTM tiebreaker, we're replacing it with the pool-winners tiebreaker box, so it's in the same place
 			_sortColumns.Remove(_sortColumns.Single(x => x.Item1 == Constants.HDR_TIEBREAKER_H2H));

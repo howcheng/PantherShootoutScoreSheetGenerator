@@ -84,7 +84,15 @@ namespace PantherShootoutScoreSheetGenerator.Services.Tests
 				}));
 
 			_mockStandingsCreator.Setup(x => x.CreateStandingsRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
-				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
+				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) =>
+				{
+					// The real standings creator adds an entry to StandingsStartAndEndRowNums
+					// We need to simulate that behavior for the mock
+					int startRow = idx;
+					int endRow = idx + config.TeamsPerPool - 1;
+					ppi.StandingsStartAndEndRowNums.Add(new Tuple<int, int>(startRow, endRow));
+					return ppi;
+				});
 
 			_mockTiebreakerColsCreator.Setup(x => x.CreateTiebreakerRequests(It.IsAny<PoolPlayInfo>(), It.IsAny<IEnumerable<Team>>(), It.IsAny<int>()))
 				.Returns((PoolPlayInfo ppi, IEnumerable<Team> ts, int idx) => ppi);
