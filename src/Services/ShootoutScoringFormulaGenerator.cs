@@ -19,14 +19,14 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// </summary>
 		/// <param name="teamSheetCell"></param>
 		/// <param name="scoreEntryStartAndEndRowNums"></param>
-		/// <returns>=SUMIFS(J$3:J$12, L$3:L$12,"="&A3)+SUMIFS(K$3:K$12, M$3:M$12,"="&A3)
-		///		+SUMIFS(N$3:N$12, Q$3:Q$12,"="A3)+SUMIFS(O$3:O$12, M$3:M$12,"="A3)
-		///		+SUMIFS(R$3:R$12, T$3:T$12,"="A3)+SUMIFS(S$3:S$12, Q$3:Q$12,"="A3)
-		///		+IF(COUNT(B3:D3)<3, SUMIFS(V$3:V$12, X$3:X$12,"="&A3)+SUMIFS(W$3:W$12, U$3:U$12,"="&A3), 0)
+		/// <returns>=SUMIFS(K$3:K$12, I$3:I$12,"="&A3)+SUMIFS(J$3:J$12, L$3:L$12,"="&A3)
+		///		+SUMIFS(O$3:O$12, M$3:M$12,"="&A3)+SUMIFS(N$3:N$12, P$3:P$12,"="&A3)
+		///		+SUMIFS(S$3:S$12, Q$3:Q$12,"="&A3)+SUMIFS(R$3:R$12, T$3:T$12,"="&A3)
+		///		+IF(COUNT(B3:D3)<3, SUMIFS(W$3:W$12, U$3:U$12,"="&A3)+SUMIFS(V$3:V$12, X$3:X$12,"="&A3), 0)
 		///	= sum of away goals column where home team = team name + sum of home goals column where away team = team name for round 1
 		///	  + same for round 2
 		///	  + same for round 3
-		///	  + same for round 4 if the team has a shootout in round 4 and hasn't already had 3 turns (applies only to 5-team pools)
+		///	  + same for round 4 if the team has a shootout in round 4 and hasn't already had 3 turns (applies only to 3- and 5-team pools / 5/6/10-team divisions)
 		/// </returns>
 		public string GetShootoutGoalsAgainstTiebreakerFormula(string teamSheetCell, int startRowNum, IEnumerable<Tuple<int, int>> scoreEntryStartAndEndRowNums)
 		{
@@ -73,9 +73,9 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <param name="roundNum"></param>
-		/// <returns>=IF(ROWS(J$15:K$16)+COLUMNS(J$15:K$16)=COUNT(J$15:K$16), SUMIFS(J$15:J$16, I$15:I$16,"="&A15)
+		/// <returns>=IF(ROWS(J$15:K$16)*COLUMNS(J$15:K$16)=COUNT(J$15:K$16), SUMIFS(J$15:J$16, I$15:I$16,"="&A15)
 		///		+SUMIFS(K$15:K$16, L$15:L$16,"="&A15), "")
-		///	= if the number of rows + number of columns = the number of cells with values in the range, sum the home goals where the home team = team name
+		///	= if the number of rows * number of columns = the number of cells with values in the range, sum the home goals where the home team = team name
 		///	  + sum the away goals where the away team = team name
 		///	  otherwise blank
 		/// </returns>
@@ -98,16 +98,16 @@ namespace PantherShootoutScoreSheetGenerator.Services
 		/// <param name="startRowNum"></param>
 		/// <param name="endRowNum"></param>
 		/// <param name="roundNum"></param>
-		/// <returns>=IF(AND(ROWS(J$3:K$4)+COLUMNS(J$3:K$4)=COUNT(J$3:K$4),COUNTIF(I$3:I$4,"="&A3)+COUNTIF(L$3:L$4,"="&A3)>0), SUMIFS(J$3:J$4, I$3:I$4,"="&A3)
+		/// <returns>=IF(AND(ROWS(J$3:K$4)*COLUMNS(J$3:K$4)=COUNT(J$3:K$4),COUNTIF(I$3:I$4,"="&A3)+COUNTIF(L$3:L$4,"="&A3)>0), SUMIFS(J$3:J$4, I$3:I$4,"="&A3)
 		///		+SUMIFS(K$3:K$4, L$3:L$4,"="&A3), "")
-		///	= if the number of rows + number of columns = the number of cells with values in the range 
+		///	= if the number of rows * number of columns = the number of cells with values in the range 
 		///	  AND there is at least one cell with the team name in the home or away team column (because in a 5-team pool, 1 team will have a bye),
 		///	  sum the home goals where the home team = team name + sum the away goals where the away team = team name
 		///	  + sum the away goals where the away team = team name
 		///	  otherwise blank
 		///	  
 		/// But if <paramref name="roundNum"/> is 4, the formula will be:
-		/// =IF(AND(ROWS(V$3:W$4)+COLUMNS(V$3:W$4)=COUNT(V$3:W$4),COUNTIF(U$3:U$4,"="&A3)+COUNTIF(X$3:X$4,"="&A3)>0,COUNT(B3:D3)<3), SUMIFS(V$3:V$4, U$3:U$4,"="&A3)
+		/// =IF(AND(ROWS(V$3:W$4)*COLUMNS(V$3:W$4)=COUNT(V$3:W$4),COUNTIF(U$3:U$4,"="&A3)+COUNTIF(X$3:X$4,"="&A3)>0,COUNT(B3:D3)<3), SUMIFS(V$3:V$4, U$3:U$4,"="&A3)
 		///		+SUMIFS(W$3:W$4, X$3:X$4,"="&A3), "")
 		///	-- which is mostly the same except for the COUNT(B3:D3)<3 part because one team will have already had 3 turns so their 4th turn doesn't count
 		/// </returns>
@@ -162,7 +162,7 @@ namespace PantherShootoutScoreSheetGenerator.Services
 			=> Utilities.CreateCellRangeString(cols.HomeGoalsColumnName, startRowNum, cols.AwayGoalsColumnName, endRowNum, CellRangeOptions.FixRow);
 
 		private string GetAllScoresEnteredForRoundFormula(string scoreEntryCellRange)
-			=> string.Format("ROWS({0})+COLUMNS({0})=COUNT({0})", scoreEntryCellRange);
+			=> string.Format("ROWS({0})*COLUMNS({0})=COUNT({0})", scoreEntryCellRange);
 
 		/// <summary>
 		/// Gets the formula for ranking the teams in the shootout standings based on the sorted standings list

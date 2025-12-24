@@ -16,11 +16,21 @@
 		[InlineData(4)]
 		public void TestGetShootoutGoalsAgainstTiebreakerFormula(int numRounds)
 		{
-			string expected = "=SUMIFS({1}$3:{1}$12, {0}$3:{0}$12,\"=\"&A3)+SUMIFS({2}$3:{2}$12, {3}$3:{3}$12,\"=\"&A3)" +
-				"+SUMIFS({4}$3:{4}$12, {5}$3:{5}$12,\"=\"&A3)+SUMIFS({6}$3:{6}$12, {7}$3:{7}$12,\"=\"&A3)" +
-				"+SUMIFS({8}$3:{8}$12, {9}$3:{9}$12,\"=\"&A3)+SUMIFS({10}$3:{10}$12, {11}$3:{11}$12,\"=\"&A3)";
+			// Goals Against formula structure (for each round):
+			// SUMIFS(AwayGoals, HomeTeam, "="&team) + SUMIFS(HomeGoals, AwayTeam, "="&team)
+			// = away goals where home team = you (goals you conceded as home team)
+			//   + home goals where away team = you (goals you conceded as away team)
+			
+			// Round 1: I=HomeTeam, J=HomeGoals, K=AwayGoals, L=AwayTeam
+			// Round 2: M=HomeTeam, N=HomeGoals, O=AwayGoals, P=AwayTeam
+			// Round 3: Q=HomeTeam, R=HomeGoals, S=AwayGoals, T=AwayTeam
+			// Round 4: U=HomeTeam, V=HomeGoals, W=AwayGoals, X=AwayTeam
+			
+			string expected = "=SUMIFS(K$3:K$12, I$3:I$12,\"=\"&A3)+SUMIFS(J$3:J$12, L$3:L$12,\"=\"&A3)" +
+				"+SUMIFS(O$3:O$12, M$3:M$12,\"=\"&A3)+SUMIFS(N$3:N$12, P$3:P$12,\"=\"&A3)" +
+				"+SUMIFS(S$3:S$12, Q$3:Q$12,\"=\"&A3)+SUMIFS(R$3:R$12, T$3:T$12,\"=\"&A3)";
 			if (numRounds == 4)
-				expected += "+IF(COUNT(B3:D3)<3, SUMIFS({12}$3:{12}$12, {13}$3:{13}$12,\"=\"&A3)+SUMIFS({14}$3:{14}$12, {15}$3:{15}$12,\"=\"&A3), 0)";
+				expected += "+IF(COUNT(B3:D3)<3, SUMIFS(W$3:W$12, U$3:U$12,\"=\"&A3)+SUMIFS(V$3:V$12, X$3:X$12,\"=\"&A3), 0)";
 
 			ShootoutScoringFormulaGenerator fg = GetFormulaGenerator();
 
@@ -41,7 +51,7 @@
 		public void TestGetShootoutScoreDisplayFormula()
 		{
 			// Test for divisions where all teams play in every round (4, 8, or 12 teams)
-			string expected = "=IF(ROWS({1}$15:{2}$16)+COLUMNS({1}$15:{2}$16)=COUNT({1}$15:{2}$16), SUMIFS({1}$15:{1}$16, {0}$15:{0}$16,\"=\"&A15)+SUMIFS({2}$15:{2}$16, {3}$15:{3}$16,\"=\"&A15), \"\")";
+			string expected = string.Format("=IF(ROWS({1}$15:{2}$16)*COLUMNS({1}$15:{2}$16)=COUNT({1}$15:{2}$16), SUMIFS({1}$15:{1}$16, {0}$15:{0}$16,\"=\"&A15)+SUMIFS({2}$15:{2}$16, {3}$15:{3}$16,\"=\"&A15), \"\")", 'I', 'J', 'K', 'L');
 
 			ShootoutScoringFormulaGenerator fg = GetFormulaGenerator();
 
@@ -65,7 +75,7 @@
 			string awayTeamCol = roundNum == 1 ? "L" : "X";
 
 			string checkAlreadyPlayed3Turns = roundNum == 4 ? ",COUNT(B3:D3)<3" : string.Empty;
-			string expected = string.Format("=IF(AND(ROWS({1}$3:{2}$4)+COLUMNS({1}$3:{2}$4)=COUNT({1}$3:{2}$4),COUNTIF({0}$3:{0}$4,\"=\"&A3)+COUNTIF({3}$3:{3}$4,\"=\"&A3)>0{4}), SUMIFS({1}$3:{1}$4, {0}$3:{0}$4,\"=\"&A3)+SUMIFS({2}$3:{2}$4, {3}$3:{3}$4,\"=\"&A3), \"\")"
+			string expected = string.Format("=IF(AND(ROWS({1}$3:{2}$4)*COLUMNS({1}$3:{2}$4)=COUNT({1}$3:{2}$4),COUNTIF({0}$3:{0}$4,\"=\"&A3)+COUNTIF({3}$3:{3}$4,\"=\"&A3)>0{4}), SUMIFS({1}$3:{1}$4, {0}$3:{0}$4,\"=\"&A3)+SUMIFS({2}$3:{2}$4, {3}$3:{3}$4,\"=\"&A3), \"\")"
 				, homeTeamCol, homeScoreCol, awayScoreCol, awayTeamCol, checkAlreadyPlayed3Turns);
 
 			ShootoutScoringFormulaGenerator fg = GetFormulaGenerator();
